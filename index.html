@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Weekend Activity Ball</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bevan&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --amber: #f5a623;
+    --amber-deep: #d4820a;
+    --felt: #1c3a2e;
+    --felt-deep: #061510;
+    --foam: #fff8e7;
+    --ink: #1a1410;
+    --wood-1: #2b2118;
+    --wood-2: #14100c;
+    --wood-3: #0a0806;
+    --text-dim: #a89478;
+    --text-dimmer: #6b5d4d;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Work Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background:
+      radial-gradient(circle at 50% 15%, var(--wood-1) 0%, var(--wood-2) 55%, var(--wood-3) 100%);
+    color: var(--foam);
+    overflow-x: hidden;
+    padding: 24px 16px 40px;
+  }
+
+  h1 {
+    font-family: 'Bevan', Georgia, 'Times New Roman', serif;
+    font-weight: 400;
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+    margin: 0 0 8px;
+    letter-spacing: 0.5px;
+    text-align: center;
+    text-wrap: balance;
+    text-shadow: 0 2px 8px rgba(245, 166, 35, 0.35);
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 28px;
+    text-align: center;
+    max-width: 420px;
+  }
+
+  .mode-dropdown {
+    position: relative;
+    margin-bottom: 22px;
+  }
+
+  button.mode-dropdown-btn {
+    font-family: 'Work Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(180deg, var(--amber) 0%, var(--amber-deep) 100%);
+    color: var(--ink);
+    border: none;
+    padding: 9px 18px 9px 22px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 999px;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+    box-shadow: 0 6px 16px rgba(212,130,10,0.3), inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+
+  button.mode-dropdown-btn:focus-visible {
+    outline: 2px solid var(--foam);
+    outline-offset: 2px;
+  }
+
+  .mode-dropdown-chevron {
+    transition: transform 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  button.mode-dropdown-btn[aria-expanded="true"] .mode-dropdown-chevron {
+    transform: rotate(180deg);
+  }
+
+  .mode-dropdown-list {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, var(--wood-1), var(--wood-3));
+    border: 1px solid rgba(245, 166, 35, 0.25);
+    border-radius: 14px;
+    padding: 6px;
+    margin: 0;
+    min-width: 190px;
+    list-style: none;
+    box-shadow: 0 20px 44px rgba(0,0,0,0.55);
+    z-index: 20;
+  }
+
+  .mode-dropdown-list[hidden] {
+    display: none;
+  }
+
+  .mode-dropdown-option {
+    padding: 10px 16px;
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+  }
+
+  .mode-dropdown-option:hover,
+  .mode-dropdown-option.focused {
+    background: rgba(245, 166, 35, 0.12);
+    color: var(--foam);
+  }
+
+  .mode-dropdown-option:focus-visible {
+    outline: 2px solid var(--foam);
+    outline-offset: -2px;
+  }
+
+  .mode-dropdown-option.active {
+    background: linear-gradient(180deg, var(--amber) 0%, var(--amber-deep) 100%);
+    color: var(--ink);
+  }
+
+  .mode-dropdown-option[aria-disabled="true"] {
+    opacity: 0.35;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .ball-wrap {
+    position: relative;
+    width: min(58vw, 300px);
+    height: min(58vw, 300px);
+    margin-bottom: 28px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ball {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 32% 28%, #4a3320 0%, #241a10 38%, #0f0a06 75%, #050302 100%);
+    box-shadow:
+      0 18px 40px rgba(0,0,0,0.55),
+      inset 0 -10px 30px rgba(0,0,0,0.6),
+      inset 0 10px 22px rgba(255,255,255,0.06);
+    position: relative;
+    transform-origin: 50% 90%;
+    transition: transform 0.05s;
+  }
+
+  .ball.shaking {
+    animation: shake 0.9s ease-in-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ball.shaking { animation: none; }
+    .window-text { transition: opacity 0.35s ease; }
+  }
+
+  @keyframes shake {
+    0%   { transform: rotate(0deg) translate(0,0); }
+    10%  { transform: rotate(-14deg) translate(-8px, 2px); }
+    20%  { transform: rotate(12deg) translate(7px, -3px); }
+    30%  { transform: rotate(-16deg) translate(-9px, 3px); }
+    40%  { transform: rotate(14deg) translate(8px, -2px); }
+    50%  { transform: rotate(-12deg) translate(-6px, 2px); }
+    60%  { transform: rotate(10deg) translate(6px, -2px); }
+    70%  { transform: rotate(-8deg) translate(-4px, 1px); }
+    80%  { transform: rotate(6deg) translate(3px, -1px); }
+    90%  { transform: rotate(-3deg) translate(-1px, 0); }
+    100% { transform: rotate(0deg) translate(0,0); }
+  }
+
+  .foam-cap {
+    position: absolute;
+    top: 6%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30%;
+    height: 16%;
+    background: radial-gradient(circle at 40% 30%, #fffdf5, var(--foam) 60%, #e8d9b8 100%);
+    border-radius: 50%;
+    opacity: 0.9;
+    filter: blur(0.3px);
+  }
+
+  .window {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 68%;
+    height: 68%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, var(--felt) 0%, #0d211a 55%, var(--felt-deep) 100%);
+    box-shadow: inset 0 0 18px rgba(0,0,0,0.8), 0 0 0 6px rgba(245,166,35,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12%;
+    text-align: center;
+  }
+
+  .window-text {
+    color: var(--amber);
+    font-weight: 700;
+    font-size: clamp(0.72rem, 2.6vw, 0.95rem);
+    line-height: 1.35;
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    text-shadow: 0 0 10px rgba(245,166,35,0.55);
+  }
+
+  .window-text.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .window-text.placeholder {
+    color: #6b8f7f;
+    font-weight: 500;
+    font-style: italic;
+    opacity: 0.7;
+    transform: scale(1);
+  }
+
+  .hint {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    min-height: 1.2em;
+  }
+
+  .venue-meta {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    min-height: 1.1em;
+    text-align: center;
+  }
+
+  .venue-meta.visible {
+    display: flex;
+  }
+
+  a.venue-map-link {
+    color: var(--amber);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  a.venue-map-link:hover,
+  a.venue-map-link:focus-visible {
+    text-decoration: underline;
+  }
+
+  button.tap-btn {
+    font-family: 'Work Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(180deg, var(--amber) 0%, var(--amber-deep) 100%);
+    color: var(--ink);
+    border: none;
+    padding: 14px 34px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(212,130,10,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    letter-spacing: 0.3px;
+  }
+
+  button.tap-btn:hover { transform: translateY(-2px); }
+  button.tap-btn:active { transform: translateY(1px) scale(0.98); }
+  button.tap-btn:focus-visible {
+    outline: 2px solid var(--foam);
+    outline-offset: 3px;
+  }
+  button.tap-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+    transform: none;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    margin-top: 6px;
+  }
+
+  button.share-btn {
+    font-family: 'Work Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: transparent;
+    color: var(--amber);
+    border: 1.5px solid var(--amber-deep);
+    padding: 11px 28px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform 0.12s ease, background-color 0.12s ease;
+    letter-spacing: 0.3px;
+  }
+
+  button.share-btn:hover:not(:disabled) {
+    background: rgba(245, 166, 35, 0.1);
+    transform: translateY(-2px);
+  }
+  button.share-btn:active:not(:disabled) { transform: translateY(1px) scale(0.98); }
+  button.share-btn:focus-visible {
+    outline: 2px solid var(--foam);
+    outline-offset: 3px;
+  }
+  button.share-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+    border-color: var(--text-dimmer);
+    color: var(--text-dimmer);
+    transform: none;
+  }
+
+  .share-status {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    min-height: 1.1em;
+    text-align: center;
+    max-width: 320px;
+  }
+
+  .share-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 3, 2, 0.82);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 100;
+  }
+
+  .share-modal.visible { display: flex; }
+
+  .share-modal-inner {
+    background: linear-gradient(180deg, var(--wood-1), var(--wood-3));
+    border: 1px solid rgba(245, 166, 35, 0.25);
+    border-radius: 20px;
+    padding: 20px;
+    max-width: 420px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+  }
+
+  .share-modal-inner img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    display: block;
+  }
+
+  .share-modal-hint {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin: 0;
+  }
+
+  .share-modal-caption {
+    font-size: 0.85rem;
+    color: var(--foam);
+    text-align: center;
+    margin: 0;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+    user-select: text;
+  }
+
+  button.share-modal-close {
+    font-family: 'Work Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: transparent;
+    border: 1.5px solid var(--amber-deep);
+    color: var(--amber);
+    padding: 10px 26px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .bubbles {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .bubble {
+    position: absolute;
+    bottom: -10%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    opacity: 0;
+  }
+
+  .ball.shaking .bubble {
+    animation: rise 0.9s ease-in forwards;
+  }
+
+  @keyframes rise {
+    0% { opacity: 0; transform: translateY(0) scale(0.6); }
+    15% { opacity: 0.8; }
+    100% { opacity: 0; transform: translateY(-220%) scale(1.1); }
+  }
+</style>
+</head>
+<body>
+
+  <h1>The Weekend Activity Ball</h1>
+  <p class="subtitle">Can't decide what to do this weekend? Ask the Weekend Activity Ball. It always has an answer to the age old question.</p>
+
+  <div class="mode-dropdown" id="modeDropdown">
+    <button class="mode-dropdown-btn" id="modeDropdownBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="modeDropdownList">
+      <span id="modeDropdownLabel">Degenerate</span>
+      <svg class="mode-dropdown-chevron" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <ul class="mode-dropdown-list" id="modeDropdownList" role="listbox" aria-labelledby="modeDropdownLabel" hidden>
+      <li class="mode-dropdown-option active" id="modeDegenerate" role="option" aria-selected="true" data-mode="degenerate">Degenerate</li>
+      <li class="mode-dropdown-option" id="modeLowKey" role="option" aria-selected="false" data-mode="lowkey">Low-Key</li>
+      <li class="mode-dropdown-option" id="modeCocktail" role="option" aria-selected="false" data-mode="cocktail">Cocktail</li>
+      <li class="mode-dropdown-option" id="modeUpcoming" role="option" aria-selected="false" data-mode="upcoming">Upcoming</li>
+    </ul>
+  </div>
+
+  <div class="ball-wrap" id="ballWrap">
+    <div class="ball" id="ball">
+      <div class="bubbles" id="bubbles"></div>
+      <div class="foam-cap"></div>
+      <div class="window">
+        <div class="window-text placeholder" id="windowText">Tap to ask&hellip;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="venue-meta" id="venueMeta">
+    <span class="venue-hood" id="venueHood"></span>
+    <a class="venue-map-link" id="venueMapLink" href="#" target="_blank" rel="noopener noreferrer">Get Directions</a>
+  </div>
+
+  <div class="hint" id="hint">Click or tap the 8 ball to get your weekend activity!</div>
+
+  <div class="actions">
+    <button class="tap-btn" id="askBtn">Ask the Ball 🎱</button>
+    <button class="share-btn" id="shareBtn" disabled>Share Result 📤</button>
+    <div class="share-status" id="shareStatus" aria-live="polite"></div>
+  </div>
+
+  <div class="share-modal" id="shareModal">
+    <div class="share-modal-inner">
+      <img id="shareImage" alt="Weekend Activity Ball result card" width="1080" height="1080">
+      <p class="share-modal-hint">Long-press (or right-click) the image to save or share it.</p>
+      <p class="share-modal-caption" id="shareModalCaption"></p>
+      <button class="share-btn" id="shareModalCopyBtn" type="button">Copy Caption</button>
+      <button class="share-modal-close" id="shareModalClose">Close</button>
+    </div>
+  </div>
+
+<script>
+(function () {
+  // The answer is built from a template: VERB + AMOUNT + "at" + VENUE + "with" + CREW.
+  const verbs = ["Drink", "Crush", "Pound", "Down", "Throw back", "Slam", "Demolish", "Knock back", "Suck down", "Put away"];
+
+  const amounts = [
+    "20 beers", "10 personal pitchers", "15 beers",
+    "12 shots", "18 beers", "a bucket of beers", "8 pitchers", "25 beers",
+    "10 pitchers", "30 beers", "6 pitchers", "15 shots",
+    "12 beers", "a full beer bucket", "an ungodly number of beers", "14 beers",
+    "9 pitchers", "16 beers", "11 pitchers", "8 personal pitchers", "22 beers",
+    "18 pitchers", "20 tallboys", "9 personal pitchers",
+    "12 pitchers", "14 shots", "16 tallboys", "a full case",
+    "24 beers", "10 beers"
+  ];
+
+  const crews = ["the absolute boys", "the boys", "the squad", "the gang", "the crew", "the fellas", "the guys"];
+
+  // Low-Key Mode — same venues and crews, but a tamer verb/amount pool for
+  // when a full "Degenerate" night out isn't what's called for.
+  const lowKeyVerbs = ["Sip", "Have", "Grab", "Nurse", "Enjoy", "Savor", "Order"];
+
+  const lowKeyAmounts = [
+    "a beer", "one beer", "a couple beers", "a beer or two", "2 beers",
+    "a pint", "one pint", "a light pour", "3 beers"
+  ];
+
+  // Real, currently-operating Seattle-area bars/pubs/taverns (checked August 2026).
+  // Static and hardcoded on purpose — no network calls, so nothing to break.
+  // Each venue carries its neighborhood, used for the "Ballard" style caption
+  // and the Google Maps search link under the ball.
+  const venues = [
+    // Capitol Hill
+    { name: "The Comet Tavern", hood: "Capitol Hill" },
+    { name: "Linda's Tavern", hood: "Capitol Hill" },
+    { name: "Captain Black's", hood: "Capitol Hill" },
+    { name: "The Pine Box", hood: "Capitol Hill" },
+    { name: "Rhein Haus", hood: "Capitol Hill" },
+    { name: "Crescent Lounge", hood: "Capitol Hill" },
+    // Ballard
+    { name: "King's Hardware", hood: "Ballard" },
+    { name: "George & Dragon Pub", hood: "Ballard" },
+    { name: "Hattie's Hat", hood: "Ballard" },
+    { name: "Sloop Tavern", hood: "Ballard" },
+    { name: "Ballard Smoke Shop", hood: "Ballard" },
+    { name: "Sunset Tavern", hood: "Ballard" },
+    { name: "Macleod's Scottish Pub", hood: "Ballard" },
+    { name: "Olaf's", hood: "Ballard" },
+    // Fremont
+    { name: "Pacific Inn Pub", hood: "Fremont" },
+    // Phinney Ridge
+    { name: "Tin Hat Bar & Grill", hood: "Phinney Ridge" },
+    { name: "Sully's Snowgoose Saloon", hood: "Phinney Ridge" },
+    // Queen Anne
+    { name: "Streamline Tavern", hood: "Queen Anne" },
+    { name: "Targy's Tavern", hood: "Queen Anne" },
+    // University District
+    { name: "Blue Moon Tavern", hood: "University District" },
+    { name: "College Inn Pub", hood: "University District" },
+    // Georgetown
+    { name: "Jules Maes Saloon", hood: "Georgetown" },
+    { name: "Marco Polo Bar & Grill", hood: "Georgetown" },
+    // Wallingford
+    { name: "Leny's Place", hood: "Wallingford" },
+    // Eastlake
+    { name: "Eastlake Zoo Tavern", hood: "Eastlake" },
+    // Pioneer Square
+    { name: "Central Saloon", hood: "Pioneer Square" },
+    // West Seattle
+    { name: "Poggie Tavern", hood: "West Seattle" },
+    // South Park
+    { name: "Loretta's Northwesterner", hood: "South Park" },
+    // Madison Park
+    { name: "Red Onion Tavern", hood: "Madison Park" },
+    // Ravenna/Roosevelt
+    { name: "The Duchess Tavern", hood: "Ravenna/Roosevelt" }
+  ];
+
+  // Cocktail Mode — straightforward cocktail-bar language, and its own
+  // dedicated venue pool (these don't serve the beer-heavy amounts above).
+  const cocktailVerbs = ["Order", "Sip", "Split", "Enjoy", "Savor", "Have", "Share"];
+
+  const cocktailAmounts = [
+    "an old fashioned", "2 old fashioneds", "a Manhattan", "a round of Manhattans",
+    "a martini", "3 martinis", "a Sazerac", "2 Sazeracs", "a Negroni",
+    "a round of Negronis", "a flight of cocktails", "an espresso martini",
+    "a whiskey sour", "2 whiskey sours"
+  ];
+
+  // Researched and verified currently-operating Seattle cocktail bars /
+  // speakeasies (checked August 2026). "Needle & Thread" is a hidden
+  // speakeasy inside Tavern Law, so its map link searches for Tavern Law —
+  // the entrance isn't separately listed on Google Maps.
+  const speakeasyVenues = [
+    // Capitol Hill
+    { name: "Canon", hood: "Capitol Hill" },
+    { name: "Liberty", hood: "Capitol Hill" },
+    { name: "Bait Shop", hood: "Capitol Hill" },
+    { name: "The Doctor's Office", hood: "Capitol Hill" },
+    { name: "Herb & Bitter Public House", hood: "Capitol Hill" },
+    { name: "Rumba", hood: "Capitol Hill" },
+    { name: "Inside Passage", hood: "Capitol Hill" },
+    { name: "Needle & Thread", hood: "Capitol Hill", mapName: "Tavern Law" },
+    // Ballard
+    { name: "Percy's & Co.", hood: "Ballard" },
+    { name: "Essex", hood: "Ballard" },
+    { name: "Baker's", hood: "Ballard" },
+    // Belltown
+    { name: "Rob Roy", hood: "Belltown" },
+    { name: "Roquette", hood: "Belltown" },
+    { name: "Bathtub Gin & Co.", hood: "Belltown" },
+    // Queen Anne
+    { name: "Rich Rich", hood: "Queen Anne" },
+    // Fremont
+    { name: "Stampede Cocktail Club", hood: "Fremont" },
+    // Greenwood
+    { name: "Dark Room", hood: "Greenwood" },
+    // Pioneer Square
+    { name: "Dead Line", hood: "Pioneer Square" }
+  ];
+
+  // Upcoming Mode — real, dated Seattle-area events where you can plausibly
+  // be drinking with friends while there (pro sports home games, drink-
+  // focused festivals). Verified via web research (checked August 2026);
+  // this array is intended to be refreshed on a regular cadence so the
+  // dates stay accurate — see the project backlog for the refresh plan.
+  // Reuses the Degenerate verb/amount pool (see nextAnswer()).
+  //
+  // Each entry:
+  //   name       - fills the VENUE slot in the sentence template
+  //   metaLine   - shown under the ball instead of a neighborhood tag
+  //   mapQuery   - full Google Maps search string (no API key, matches the
+  //                project's zero-network-dependency rule)
+  //   rangeStart/rangeEnd - YYYY-MM-DD bounds used to check whether this
+  //                event falls within the upcoming Fri-Sun weekend
+  const upcomingEvents = [
+    // Mariners homestand vs. Athletics (T-Mobile Park, SoDo)
+    { name: "the Mariners game", metaLine: "vs. Athletics · Fri, Sep 4 · 7:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-04", rangeEnd: "2026-09-04" },
+    { name: "the Mariners game", metaLine: "vs. Athletics · Sat, Sep 5 · 6:40 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-05", rangeEnd: "2026-09-05" },
+    { name: "the Mariners game", metaLine: "vs. Athletics · Sun, Sep 6 · 1:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-06", rangeEnd: "2026-09-06" },
+    // Mariners homestand vs. Angels
+    { name: "the Mariners game", metaLine: "vs. Angels · Fri, Sep 25 · 7:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-25", rangeEnd: "2026-09-25" },
+    { name: "the Mariners game", metaLine: "vs. Angels · Sat, Sep 26 · 6:40 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-26", rangeEnd: "2026-09-26" },
+    { name: "the Mariners game", metaLine: "vs. Angels · Sun, Sep 27 · 12:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-27", rangeEnd: "2026-09-27" },
+    // Kraken (Climate Pledge Arena, Uptown / Seattle Center)
+    { name: "the Kraken preseason game", metaLine: "vs. Canucks · Sat, Sep 19 · 7:00 PM", mapQuery: "Climate Pledge Arena, Seattle, WA", rangeStart: "2026-09-19", rangeEnd: "2026-09-19" },
+    { name: "the Kraken home opener", metaLine: "vs. Flames · Sun, Oct 4 · 5:00 PM", mapQuery: "Climate Pledge Arena, Seattle, WA", rangeStart: "2026-10-04", rangeEnd: "2026-10-04" },
+    { name: "the Kraken game", metaLine: "vs. Wild · Sat, Oct 24 · 7:00 PM", mapQuery: "Climate Pledge Arena, Seattle, WA", rangeStart: "2026-10-24", rangeEnd: "2026-10-24" },
+    // Seahawks (Lumen Field, SoDo)
+    { name: "the Seahawks game", metaLine: "vs. Chargers · Sun, Oct 4 · 1:25 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-04", rangeEnd: "2026-10-04" },
+    { name: "the Seahawks game", metaLine: "vs. 49ers · Sun, Oct 11 · 1:25 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-11", rangeEnd: "2026-10-11" },
+    { name: "the Seahawks game", metaLine: "vs. Chiefs (SNF) · Sun, Oct 25 · 5:20 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-25", rangeEnd: "2026-10-25" },
+    // Sounders FC (Lumen Field, SoDo)
+    { name: "the Sounders match", metaLine: "vs. NY Red Bulls · Sat, Sep 5 · 5:30 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-09-05", rangeEnd: "2026-09-05" },
+    { name: "the Sounders match", metaLine: "vs. Minnesota United · Sat, Sep 26 · 5:30 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-09-26", rangeEnd: "2026-09-26" },
+    { name: "the Sounders match", metaLine: "vs. CF Montréal · Sat, Oct 17 · 7:30 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-17", rangeEnd: "2026-10-17" },
+    // Drink-focused festivals
+    { name: "Fremont Oktoberfest", metaLine: "Fri–Sun, Sep 18–20", mapQuery: "Fremont Oktoberfest, Seattle, WA", rangeStart: "2026-09-18", rangeEnd: "2026-09-20" },
+    { name: "Cider Summit Seattle", metaLine: "Fri–Sat, Sep 11–12", mapQuery: "South Lake Union Discovery Center, Seattle, WA", rangeStart: "2026-09-11", rangeEnd: "2026-09-12" },
+    { name: "the Great Pumpkin Beer Festival", metaLine: "Sat, Oct 3 · 4–10 PM", mapQuery: "Elysian Capitol Hill Brewery, Seattle, WA", rangeStart: "2026-10-03", rangeEnd: "2026-10-03" },
+    { name: "Leavenworth Oktoberfest", metaLine: "Fri–Sat, Oct 2–3", mapQuery: "Leavenworth Oktoberfest, Leavenworth, WA", rangeStart: "2026-10-02", rangeEnd: "2026-10-03" },
+    { name: "Leavenworth Oktoberfest", metaLine: "Fri–Sat, Oct 9–10", mapQuery: "Leavenworth Oktoberfest, Leavenworth, WA", rangeStart: "2026-10-09", rangeEnd: "2026-10-10" },
+    { name: "Leavenworth Oktoberfest", metaLine: "Fri–Sat, Oct 16–17", mapQuery: "Leavenworth Oktoberfest, Leavenworth, WA", rangeStart: "2026-10-16", rangeEnd: "2026-10-17" }
+  ];
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function toDateStr(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+  // Returns the YYYY-MM-DD bounds of the nearest upcoming Friday-through-
+  // Sunday window (today's weekend if it's already Fri/Sat/Sun).
+  function upcomingWeekendRange(now) {
+    const day = now.getDay(); // 0 = Sun ... 6 = Sat
+    let offsetToFriday;
+    if (day === 5) offsetToFriday = 0;
+    else if (day === 6) offsetToFriday = -1;
+    else if (day === 0) offsetToFriday = -2;
+    else offsetToFriday = 5 - day;
+    const friday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offsetToFriday);
+    const sunday = new Date(friday.getFullYear(), friday.getMonth(), friday.getDate() + 2);
+    return { start: toDateStr(friday), end: toDateStr(sunday) };
+  }
+
+  // Events whose [rangeStart, rangeEnd] overlaps the upcoming weekend window.
+  function computeUpcomingPool() {
+    const range = upcomingWeekendRange(new Date());
+    return upcomingEvents.filter(function (ev) {
+      return !(ev.rangeEnd < range.start || ev.rangeStart > range.end);
+    });
+  }
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  let lastAnswer = '';
+
+  let mode = 'degenerate';
+
+  // Returns { text, venue } — the venue object travels alongside the answer
+  // text so the caller can show its neighborhood/date and a map link for it.
+  // For Upcoming mode, venue may be null if there's nothing qualifying this
+  // weekend (the mode button should be disabled in that case, but ask()
+  // guards against it too).
+  function nextAnswer() {
+    let verbPool, amountPool, venuePool;
+    if (mode === 'lowkey') {
+      verbPool = lowKeyVerbs; amountPool = lowKeyAmounts; venuePool = venues;
+    } else if (mode === 'cocktail') {
+      verbPool = cocktailVerbs; amountPool = cocktailAmounts; venuePool = speakeasyVenues;
+    } else if (mode === 'upcoming') {
+      verbPool = verbs; amountPool = amounts; venuePool = computeUpcomingPool();
+    } else {
+      verbPool = verbs; amountPool = amounts; venuePool = venues;
+    }
+
+    if (venuePool.length === 0) {
+      return { text: "Nothing drink-worthy on the calendar this weekend — check back soon.", venue: null };
+    }
+
+    let text;
+    let venue, verb, amount, crew;
+    let attempts = 0;
+    do {
+      venue = pick(venuePool);
+      verb = pick(verbPool);
+      amount = pick(amountPool);
+      crew = pick(crews);
+      text = verb + ' ' + amount + ' at ' + venue.name + ' with ' + crew + '.';
+      attempts++;
+    } while (text === lastAnswer && attempts < 6 && (venuePool.length * amountPool.length * crews.length > 1));
+    lastAnswer = text;
+    // verb/amount/crew travel alongside text/venue so a deep link can encode
+    // exactly this roll and reproduce it verbatim later (see buildShareUrl).
+    return { text: text, venue: venue, verb: verb, amount: amount, crew: crew };
+  }
+
+  // If the neighborhood name is already part of the venue's own name (e.g.
+  // "Ballard Smoke Shop"), don't repeat it in the caption. Upcoming-mode
+  // venues carry a metaLine (opponent/date) instead of a hood, shown as-is.
+  function hoodDisplayText(venue) {
+    if (venue.metaLine) return venue.metaLine;
+    return venue.name.toLowerCase().includes(venue.hood.toLowerCase()) ? '' : venue.hood;
+  }
+
+  function venueMapUrl(venue) {
+    if (venue.mapQuery) {
+      return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(venue.mapQuery);
+    }
+    const searchName = venue.mapName || venue.name;
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(searchName + ', Seattle, WA');
+  }
+
+  // The published artifact URL — also the base for deep links (see
+  // buildShareUrl/hydrateFromUrl below), so a shared link reproduces the
+  // exact roll it was generated from instead of handing the recipient a
+  // fresh random one.
+  const SHARE_BASE_URL = 'https://claude.ai/code/artifact/7c490af5-b43c-49be-8159-ff059050139b';
+
+  // Encodes one specific roll (mode + verb + amount + crew + which venue)
+  // as query params on the app's own URL. Loading that URL re-renders this
+  // exact result via hydrateFromUrl() instead of asking the ball fresh —
+  // pure client-side string building, no backend involved. Upcoming-mode
+  // events also carry rangeStart since their `name` alone isn't unique
+  // (e.g. multiple "the Mariners game" entries on different dates).
+  function buildShareUrl(venue, verb, amount, crew) {
+    const params = new URLSearchParams();
+    params.set('m', mode);
+    params.set('v', verb);
+    params.set('a', amount);
+    params.set('c', crew);
+    params.set('vn', venue.name);
+    if (mode === 'upcoming' && venue.rangeStart) params.set('vd', venue.rangeStart);
+    return SHARE_BASE_URL + '?' + params.toString();
+  }
+
+  const ball = document.getElementById('ball');
+  const ballWrap = document.getElementById('ballWrap');
+  const windowText = document.getElementById('windowText');
+  const askBtn = document.getElementById('askBtn');
+  const shareBtn = document.getElementById('shareBtn');
+  const shareStatus = document.getElementById('shareStatus');
+  const shareModal = document.getElementById('shareModal');
+  const shareImage = document.getElementById('shareImage');
+  const shareModalCaption = document.getElementById('shareModalCaption');
+  const shareModalCopyBtn = document.getElementById('shareModalCopyBtn');
+  const shareModalClose = document.getElementById('shareModalClose');
+  const hint = document.getElementById('hint');
+  const bubblesContainer = document.getElementById('bubbles');
+  const venueMeta = document.getElementById('venueMeta');
+  const venueHood = document.getElementById('venueHood');
+  const venueMapLink = document.getElementById('venueMapLink');
+  // Mode dropdown — a themed button + listbox panel, replacing the old
+  // 4-across pill toggle (which started stretching the layout once a
+  // fourth mode was added). Follows the standard listbox pattern: button
+  // opens/closes the panel, arrow keys move focus between options, Enter/
+  // Space selects, Escape closes and returns focus to the button.
+  const modeDropdown = document.getElementById('modeDropdown');
+  const modeDropdownBtn = document.getElementById('modeDropdownBtn');
+  const modeDropdownLabel = document.getElementById('modeDropdownLabel');
+  const modeDropdownList = document.getElementById('modeDropdownList');
+  const modeOptions = Array.from(modeDropdownList.querySelectorAll('.mode-dropdown-option'));
+  const modeLabels = { degenerate: 'Degenerate', lowkey: 'Low-Key', cocktail: 'Cocktail', upcoming: 'Upcoming' };
+  const modeUpcomingOption = document.getElementById('modeUpcoming');
+
+  // If nothing qualifies this weekend, grey out the Upcoming option rather
+  // than let someone select a mode that can't produce an answer.
+  if (computeUpcomingPool().length === 0) {
+    modeUpcomingOption.setAttribute('aria-disabled', 'true');
+    modeUpcomingOption.title = 'No qualifying events this weekend — check back soon.';
+  }
+
+  function isOptionDisabled(option) {
+    return option.getAttribute('aria-disabled') === 'true';
+  }
+
+  function setMode(newMode) {
+    if (mode === newMode) return;
+    const option = modeOptions.find(function (o) { return o.dataset.mode === newMode; });
+    if (!option || isOptionDisabled(option)) return;
+    mode = newMode;
+    modeOptions.forEach(function (o) {
+      const isActive = o.dataset.mode === mode;
+      o.classList.toggle('active', isActive);
+      o.setAttribute('aria-selected', String(isActive));
+    });
+    modeDropdownLabel.textContent = modeLabels[mode];
+  }
+
+  function openDropdown() {
+    modeDropdownList.hidden = false;
+    modeDropdownBtn.setAttribute('aria-expanded', 'true');
+    const activeOption = modeOptions.find(function (o) { return o.dataset.mode === mode; });
+    (activeOption || modeOptions[0]).focus();
+  }
+
+  function closeDropdown(focusButton) {
+    modeDropdownList.hidden = true;
+    modeDropdownBtn.setAttribute('aria-expanded', 'false');
+    if (focusButton) modeDropdownBtn.focus();
+  }
+
+  modeDropdownBtn.addEventListener('click', function () {
+    if (modeDropdownList.hidden) openDropdown(); else closeDropdown(false);
+  });
+
+  modeOptions.forEach(function (option) {
+    option.tabIndex = -1;
+    option.addEventListener('click', function () {
+      if (isOptionDisabled(option)) return;
+      setMode(option.dataset.mode);
+      closeDropdown(true);
+    });
+    option.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (!isOptionDisabled(option)) { setMode(option.dataset.mode); closeDropdown(true); }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeDropdown(true);
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const dir = e.key === 'ArrowDown' ? 1 : -1;
+        let idx = modeOptions.indexOf(option);
+        for (let i = 0; i < modeOptions.length; i++) {
+          idx = (idx + dir + modeOptions.length) % modeOptions.length;
+          if (!isOptionDisabled(modeOptions[idx])) { modeOptions[idx].focus(); break; }
+        }
+      }
+    });
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!modeDropdown.contains(e.target) && !modeDropdownList.hidden) closeDropdown(false);
+  });
+
+  for (let i = 0; i < 10; i++) {
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    b.style.left = (10 + Math.random() * 80) + '%';
+    b.style.animationDelay = (Math.random() * 0.5) + 's';
+    b.style.width = b.style.height = (4 + Math.random() * 5) + 'px';
+    bubblesContainer.appendChild(b);
+  }
+
+  let audioCtx = null;
+  function getCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playShakeSound() {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    const thumps = 7;
+    for (let i = 0; i < thumps; i++) {
+      const t = now + i * 0.11 + Math.random() * 0.02;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(90 + Math.random() * 40, t);
+      osc.frequency.exponentialRampToValueAtTime(50, t + 0.08);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.1);
+    }
+  }
+
+  function playRevealSound() {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+
+    const bufferSize = ctx.sampleRate * 0.4;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 1200;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.25, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    noise.connect(filter).connect(noiseGain).connect(ctx.destination);
+    noise.start(now);
+
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(520, now + 0.18);
+    oscGain.gain.setValueAtTime(0.0001, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.18, now + 0.03);
+    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+    osc.connect(oscGain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  }
+
+  // --- Shareable result card ---------------------------------------------
+  // Renders a self-contained 1080x1080 PNG matching the ball's own look, so
+  // sharing a result shows the actual card image, not just a text string.
+
+  function wrapText(ctx, text, maxWidth) {
+    const words = text.split(' ');
+    const lines = [];
+    let current = '';
+    for (const word of words) {
+      const candidate = current ? current + ' ' + word : word;
+      if (current && ctx.measureText(candidate).width > maxWidth) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = candidate;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  }
+
+  // Shrinks the answer text until it (and its wrapped lines) fit inside the
+  // window's safe box — answers vary a lot in length, from "Drink 20 beers…"
+  // to much longer venue-name combos, so this can't be a fixed font size.
+  function fitAnswerText(ctx, text, maxWidth, maxHeight, maxSize, minSize) {
+    for (let size = maxSize; size >= minSize; size -= 2) {
+      ctx.font = "700 " + size + "px 'Work Sans', sans-serif";
+      const lines = wrapText(ctx, text, maxWidth);
+      const lineHeight = size * 1.32;
+      const totalHeight = lines.length * lineHeight;
+      if (totalHeight <= maxHeight || size === minSize) {
+        return { size: size, lines: lines, lineHeight: lineHeight };
+      }
+    }
+  }
+
+  async function buildShareCardBlob(answerText) {
+    const SIZE = 1080;
+    const canvas = document.createElement('canvas');
+    canvas.width = SIZE;
+    canvas.height = SIZE;
+    const ctx = canvas.getContext('2d');
+
+    // Make sure the real web fonts are loaded before drawing — canvas text
+    // silently falls back to a system font otherwise, even though the page's
+    // own CSS text is already using the right one.
+    try {
+      await Promise.all([
+        document.fonts.load("400 44px 'Bevan'"),
+        document.fonts.load("700 42px 'Work Sans'")
+      ]);
+      await document.fonts.ready;
+    } catch (e) { /* draw with fallback fonts if this fails */ }
+
+    // Background — same wood radial gradient as the page itself.
+    const bgGrad = ctx.createRadialGradient(540, 216, 0, 540, 216, 1019);
+    bgGrad.addColorStop(0, '#2b2118');
+    bgGrad.addColorStop(0.55, '#14100c');
+    bgGrad.addColorStop(1, '#0a0806');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    // Header
+    ctx.font = "400 44px 'Bevan', Georgia, serif";
+    ctx.fillStyle = '#f5a623';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(245, 166, 35, 0.35)';
+    ctx.shadowOffsetY = 2;
+    ctx.shadowBlur = 8;
+    ctx.fillText('The Weekend Activity Ball has spoken', 540, 192);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowOffsetY = 0;
+    ctx.shadowBlur = 0;
+
+    // Ball
+    const ballCx = 540, ballCy = 598, ballR = 320;
+    const ballLeft = ballCx - ballR, ballTop = ballCy - ballR;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ballCx, ballCy, ballR, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.shadowColor = 'rgba(0,0,0,0.55)';
+    ctx.shadowBlur = 60;
+    ctx.shadowOffsetY = 18;
+    ctx.fillStyle = '#0f0a06';
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ballCx, ballCy, ballR, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    const ballGrad = ctx.createRadialGradient(
+      ballLeft + 0.32 * (ballR * 2), ballTop + 0.28 * (ballR * 2), 0,
+      ballLeft + 0.32 * (ballR * 2), ballTop + 0.28 * (ballR * 2), 502
+    );
+    ballGrad.addColorStop(0, '#4a3320');
+    ballGrad.addColorStop(0.38, '#241a10');
+    ballGrad.addColorStop(0.75, '#0f0a06');
+    ballGrad.addColorStop(1, '#050302');
+    ctx.fillStyle = ballGrad;
+    ctx.fillRect(ballLeft, ballTop, ballR * 2, ballR * 2);
+    ctx.restore();
+
+    // Foam cap
+    const foamCx = ballCx;
+    const foamCy = ballTop + 0.14 * (ballR * 2);
+    const foamRx = 0.15 * (ballR * 2);
+    const foamRy = 0.08 * (ballR * 2);
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    const foamGrad = ctx.createRadialGradient(foamCx - 20, foamCy - 15, 0, foamCx, foamCy, 110);
+    foamGrad.addColorStop(0, '#fffdf5');
+    foamGrad.addColorStop(0.6, '#fff8e7');
+    foamGrad.addColorStop(1, '#e8d9b8');
+    ctx.fillStyle = foamGrad;
+    ctx.beginPath();
+    ctx.ellipse(foamCx, foamCy, foamRx, foamRy, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Window (felt)
+    const winR = 0.34 * (ballR * 2);
+    const winLeft = ballCx - winR, winTop = ballCy - winR;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ballCx, ballCy, winR, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    const winGrad = ctx.createRadialGradient(
+      winLeft + 0.40 * (winR * 2), winTop + 0.35 * (winR * 2), 0,
+      winLeft + 0.40 * (winR * 2), winTop + 0.35 * (winR * 2), 297
+    );
+    winGrad.addColorStop(0, '#1c3a2e');
+    winGrad.addColorStop(0.55, '#0d211a');
+    winGrad.addColorStop(1, '#061510');
+    ctx.fillStyle = winGrad;
+    ctx.fillRect(winLeft, winTop, winR * 2, winR * 2);
+    ctx.restore();
+
+    // Amber ring around the window
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ballCx, ballCy, winR + 6, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(245, 166, 35, 0.16)';
+    ctx.lineWidth = 12;
+    ctx.stroke();
+    ctx.restore();
+
+    // Answer text, sized to fit the window's safe area
+    const safeSize = winR * 2 * 0.74;
+    const fit = fitAnswerText(ctx, answerText, safeSize, safeSize, 42, 20);
+    ctx.font = "700 " + fit.size + "px 'Work Sans', sans-serif";
+    ctx.fillStyle = '#f5a623';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(245, 166, 35, 0.55)';
+    ctx.shadowBlur = 14;
+    const startY = ballCy - ((fit.lines.length - 1) * fit.lineHeight) / 2;
+    fit.lines.forEach(function (line, i) {
+      ctx.fillText(line, ballCx, startY + i * fit.lineHeight);
+    });
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    return new Promise(function (resolve) {
+      canvas.toBlob(resolve, 'image/png', 0.95);
+    });
+  }
+
+  function openShareModal(blob, caption) {
+    const url = URL.createObjectURL(blob);
+    shareImage.src = url;
+    shareImage.dataset.blobUrl = url;
+    shareModalCaption.textContent = caption || '';
+    shareModalCopyBtn.textContent = 'Copy Caption';
+    shareModal.classList.add('visible');
+  }
+
+  function closeShareModal() {
+    shareModal.classList.remove('visible');
+    if (shareImage.dataset.blobUrl) {
+      URL.revokeObjectURL(shareImage.dataset.blobUrl);
+      delete shareImage.dataset.blobUrl;
+    }
+    shareImage.src = '';
+  }
+
+  shareModalClose.addEventListener('click', closeShareModal);
+  shareModal.addEventListener('click', function (e) {
+    if (e.target === shareModal) closeShareModal();
+  });
+
+  shareModalCopyBtn.addEventListener('click', async function () {
+    if (!shareCaption) return;
+    try {
+      await navigator.clipboard.writeText(shareCaption);
+      shareModalCopyBtn.textContent = 'Copied!';
+      setTimeout(function () { shareModalCopyBtn.textContent = 'Copy Caption'; }, 1500);
+    } catch (e) {
+      console.warn('Weekend Activity Ball: caption copy failed, select the text manually', e);
+      shareModalCopyBtn.textContent = 'Select text above ↑';
+      setTimeout(function () { shareModalCopyBtn.textContent = 'Copy Caption'; }, 2000);
+    }
+  });
+
+  let shareBusy = false;
+  let shareBlob = null;
+  let shareGeneration = 0;
+  let shareAnswerText = null;
+  let shareCaption = null;
+
+  // Builds the share card in the background as soon as an answer appears, so
+  // by the time someone taps Share the image already exists — no async delay
+  // between the tap and calling navigator.share(), which is what iOS Safari
+  // needs to keep treating the tap as "recent enough" to allow the share sheet.
+  // linkUrl is the deep link built by buildShareUrl() for this exact roll —
+  // the caption embeds both the actual result text and that link, so
+  // whoever it's shared with sees what was rolled and can open the same one.
+  function prepareShareImage(answerText, linkUrl) {
+    shareBlob = null;
+    shareAnswerText = answerText;
+    shareCaption = answerText + ' Who\'s in? 🍺 ' + linkUrl;
+    shareBtn.disabled = true;
+    const myGeneration = ++shareGeneration;
+
+    buildShareCardBlob(answerText).then(function (blob) {
+      if (myGeneration !== shareGeneration) return; // a newer roll started; discard
+      if (!blob) throw new Error('canvas produced no image');
+      shareBlob = blob;
+      shareBtn.disabled = false;
+    }).catch(function (e) {
+      if (myGeneration !== shareGeneration) return;
+      console.error('Weekend Activity Ball: card pre-generation failed', e);
+      shareStatus.textContent = "Couldn't prepare an image for this one.";
+    });
+  }
+
+  async function shareResult() {
+    if (shareBusy) return;
+    if (!shareBlob) return; // button should be disabled in this case, but be safe
+
+    shareBusy = true;
+    const originalLabel = shareBtn.textContent;
+    shareBtn.disabled = true;
+    shareBtn.textContent = 'Sharing…';
+    shareStatus.textContent = '';
+
+    function done() {
+      shareBtn.disabled = false;
+      shareBtn.textContent = originalLabel;
+      shareBusy = false;
+    }
+
+    const blob = shareBlob;
+    const file = new File([blob], 'weekend-activity-ball.png', { type: 'image/png' });
+
+    const caption = shareCaption || (shareAnswerText || '');
+
+    // Tier 1: native share sheet with the image attached (best on mobile).
+    // Note: when this page is loaded inside a sandboxed hosting frame (as the
+    // published artifact link is on iOS Safari), canShare() correctly returns
+    // false here — the browser blocks Web Share file-attachments inside an
+    // iframe unless the embedding page grants that permission, which is outside
+    // this file's control. Tier 2 (clipboard) is the right fallback there.
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text: caption });
+        shareStatus.textContent = 'Shared!';
+        done();
+        return;
+      } catch (shareErr) {
+        if (shareErr && shareErr.name === 'AbortError') {
+          // user closed the share sheet without picking anything — done, not an error
+          done();
+          return;
+        }
+        console.warn('Weekend Activity Ball: share sheet failed, trying clipboard', shareErr);
+        // fall through to the clipboard tier
+      }
+    }
+
+    // Tier 2: copy to the clipboard (good on desktop browsers, and the
+    // effective default on iOS when the share sheet isn't available). Try
+    // copying the image AND caption together first (supported in modern
+    // Chrome/Edge); if the browser rejects a multi-type ClipboardItem, fall
+    // back to image-only so the copy still succeeds, and surface the caption
+    // in the status line so it can still be grabbed manually.
+    if (navigator.clipboard && window.ClipboardItem) {
+      try {
+        const textBlob = new Blob([caption], { type: 'text/plain' });
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob, 'text/plain': textBlob })]);
+        shareStatus.textContent = 'Copied! Paste it into your chat.';
+        done();
+        return;
+      } catch (multiErr) {
+        console.warn('Weekend Activity Ball: image+text clipboard copy failed, trying image-only', multiErr);
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          shareStatus.textContent = 'Image copied. Caption: ' + caption;
+          done();
+          return;
+        } catch (imgErr) {
+          console.warn('Weekend Activity Ball: clipboard copy failed, showing image instead', imgErr);
+          // fall through to the modal tier
+        }
+      }
+    }
+
+    // Tier 3: show the image (long-press / right-click to save or share it —
+    // script-triggered downloads don't work everywhere this page can be
+    // viewed) plus the caption as selectable text with its own copy button,
+    // since this tier has no clipboard/share API carrying it automatically.
+    openShareModal(blob, caption);
+    done();
+  }
+
+  shareBtn.addEventListener('click', shareResult);
+
+  let busy = false;
+
+  // Swaps which button carries the highlighted (amber, "tap-btn") look —
+  // Ask starts as the primary CTA, but once there's a result to share,
+  // Share Result becomes the highlighted action and Ask again steps back
+  // to the outline style. Both button classes already carry their own
+  // hover/disabled/focus styling, so this is just a class swap, no new CSS.
+  function setPrimaryCta(which) {
+    if (which === 'share') {
+      askBtn.className = 'share-btn';
+      shareBtn.className = 'tap-btn';
+    } else {
+      askBtn.className = 'tap-btn';
+      shareBtn.className = 'share-btn';
+    }
+  }
+
+  function ask() {
+    if (busy) return;
+    busy = true;
+    askBtn.disabled = true;
+    shareBtn.disabled = true;
+    hint.style.display = '';
+    hint.textContent = 'Shaking...';
+    shareStatus.textContent = '';
+    venueMeta.classList.remove('visible');
+    windowText.classList.remove('visible');
+    windowText.classList.add('placeholder');
+    windowText.textContent = '...';
+
+    ball.classList.remove('shaking');
+    void ball.offsetWidth;
+    ball.classList.add('shaking');
+
+    try { playShakeSound(); } catch (e) {}
+
+    setTimeout(() => {
+      ball.classList.remove('shaking');
+      const result = nextAnswer();
+      windowText.classList.remove('placeholder');
+      windowText.textContent = result.text;
+      requestAnimationFrame(() => windowText.classList.add('visible'));
+      try { playRevealSound(); } catch (e) {}
+
+      if (result.venue) {
+        // The venue/directions line is the only thing shown here now — no
+        // "tap again" copy competing with it for the same space.
+        hint.style.display = 'none';
+        hint.textContent = '';
+        const hoodText = hoodDisplayText(result.venue);
+        venueHood.textContent = hoodText ? hoodText + ' · ' : '';
+        venueMapLink.href = venueMapUrl(result.venue);
+        venueMeta.classList.add('visible');
+        prepareShareImage(result.text, buildShareUrl(result.venue, result.verb, result.amount, result.crew));
+        setPrimaryCta('share');
+      } else {
+        // Upcoming mode came up empty (e.g. pool changed mid-session) — no
+        // venue to show or share, so this is the one case that still needs
+        // a text hint rather than the (empty) venue line.
+        hint.style.display = '';
+        hint.textContent = 'Try another mode for a weekend activity.';
+        shareBlob = null;
+        shareBtn.disabled = true;
+        setPrimaryCta('ask');
+      }
+
+      askBtn.disabled = false;
+      askBtn.textContent = 'Ask again 🎱';
+      busy = false;
+    }, 900);
+  }
+
+  ballWrap.addEventListener('click', ask);
+  askBtn.addEventListener('click', ask);
+
+  // Reproduces a specific shared roll from URL query params (see
+  // buildShareUrl) instead of showing the "tap to ask" placeholder — so
+  // opening a shared link shows the exact result that was sent, not a
+  // fresh random one. Pure client-side: reads location.search once on
+  // load, no network call involved.
+  function hydrateFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const m = params.get('m');
+    const v = params.get('v');
+    const a = params.get('a');
+    const c = params.get('c');
+    const vn = params.get('vn');
+    if (!m || !v || !a || !c || !vn || !modeLabels[m]) return;
+
+    let venuePool;
+    if (m === 'lowkey') venuePool = venues;
+    else if (m === 'cocktail') venuePool = speakeasyVenues;
+    else if (m === 'upcoming') venuePool = upcomingEvents; // full array — a shared
+    // link to a specific event should still resolve even if it's no longer
+    // "this weekend" by the time it's opened, so this intentionally skips
+    // the current-weekend filter computeUpcomingPool() applies.
+    else venuePool = venues;
+
+    let venue;
+    if (m === 'upcoming') {
+      const vd = params.get('vd');
+      venue = venuePool.find(function (ev) { return ev.name === vn && ev.rangeStart === vd; });
+    } else {
+      venue = venuePool.find(function (ven) { return ven.name === vn; });
+    }
+
+    mode = m;
+    modeOptions.forEach(function (o) {
+      const isActive = o.dataset.mode === mode;
+      o.classList.toggle('active', isActive);
+      o.setAttribute('aria-selected', String(isActive));
+    });
+    modeDropdownLabel.textContent = modeLabels[mode];
+
+    const text = v + ' ' + a + ' at ' + vn + ' with ' + c + '.';
+    windowText.classList.remove('placeholder');
+    windowText.textContent = text;
+    windowText.classList.add('visible');
+    lastAnswer = text;
+    askBtn.textContent = 'Ask again 🎱';
+
+    if (venue) {
+      const hoodText = hoodDisplayText(venue);
+      venueHood.textContent = hoodText ? hoodText + ' · ' : '';
+      venueMapLink.href = venueMapUrl(venue);
+      venueMeta.classList.add('visible');
+      hint.style.display = 'none';
+      hint.textContent = '';
+      prepareShareImage(text, buildShareUrl(venue, v, a, c));
+      setPrimaryCta('share');
+    } else {
+      // The underlying data moved on (e.g. this event was pruned by the
+      // weekly refresh, or the static venue list changed) — same graceful
+      // fallback tone as the empty-Upcoming-pool case.
+      hint.style.display = '';
+      hint.textContent = m === 'upcoming'
+        ? "That one's already come and gone — ask the ball for what's next."
+        : "Couldn't find that one anymore — ask the ball for something new.";
+      setPrimaryCta('ask');
+    }
+
+    // Drop the query string from the visible URL so a later re-share builds
+    // a fresh link instead of looking like it's still pointing at this one.
+    try { window.history.replaceState(null, '', window.location.pathname); } catch (e) {}
+  }
+
+  hydrateFromUrl();
+})();
+</script>
+
+</body>
+</html>
