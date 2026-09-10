@@ -265,6 +265,7 @@
     display: none;
     align-items: center;
     justify-content: center;
+    flex-wrap: wrap;
     gap: 4px;
     font-size: 0.8rem;
     color: var(--text-dim);
@@ -453,6 +454,62 @@
     15% { opacity: 0.8; }
     100% { opacity: 0; transform: translateY(-220%) scale(1.1); }
   }
+
+  /* Shared-view actions — shown when a friend opens someone else's shared
+     link (see hydrateFromUrl/showSharedViewActions). "I'm In" becomes the
+     primary CTA and Ask steps down to a tiny text link, via flex `order`
+     so the underlying DOM/click-handler wiring doesn't have to change. */
+  .actions.shared-view #commitBtn { order: -1; }
+  .actions.shared-view #shareBtn { order: 0; }
+  .actions.shared-view #askBtn {
+    order: 1;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-decoration: underline;
+    padding: 4px 10px;
+  }
+  .actions.shared-view #askBtn:hover { color: var(--foam); transform: none; }
+
+  .commit-confirm {
+    align-items: center;
+  }
+
+  .confirm-check {
+    font-size: 1.6rem;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+
+  .confirm-text {
+    font-weight: 700;
+    color: var(--foam);
+    margin: 0;
+    text-align: center;
+  }
+
+  .confirm-subtext {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin: 0;
+    max-width: 300px;
+    line-height: 1.5;
+  }
+
+  .reply-preview {
+    font-size: 0.85rem;
+    color: var(--foam);
+    text-align: center;
+    margin: 0;
+    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+    border: 1px solid rgba(245, 166, 35, 0.2);
+  }
 </style>
 </head>
 <body>
@@ -469,7 +526,11 @@
       <li class="mode-dropdown-option active" id="modeDegenerate" role="option" aria-selected="true" data-mode="degenerate">Degenerate</li>
       <li class="mode-dropdown-option" id="modeLowKey" role="option" aria-selected="false" data-mode="lowkey">Low-Key</li>
       <li class="mode-dropdown-option" id="modeCocktail" role="option" aria-selected="false" data-mode="cocktail">Cocktail</li>
-      <li class="mode-dropdown-option" id="modeUpcoming" role="option" aria-selected="false" data-mode="upcoming">Upcoming</li>
+      <!-- Upcoming mode paused (Sep 2026) to focus on the core three themes —
+           its data/logic is still intact below (upcomingEvents,
+           computeUpcomingPool, nextAnswer/hydrateFromUrl branches), so
+           re-enabling it later is just uncommenting this option back in. -->
+      <!-- <li class="mode-dropdown-option" id="modeUpcoming" role="option" aria-selected="false" data-mode="upcoming">Upcoming</li> -->
     </ul>
   </div>
 
@@ -486,14 +547,25 @@
   <div class="venue-meta" id="venueMeta">
     <span class="venue-hood" id="venueHood"></span>
     <a class="venue-map-link" id="venueMapLink" href="#" target="_blank" rel="noopener noreferrer">Get Directions</a>
+    <span id="calendarSep"> · </span>
+    <a class="venue-map-link" id="venueCalendarLink" href="#">Add to Calendar</a>
   </div>
 
   <div class="hint" id="hint">Click or tap the 8 ball to get your weekend activity!</div>
 
-  <div class="actions">
+  <div class="actions" id="actions">
+    <button class="tap-btn" id="commitBtn" hidden>I'm In — Add to Calendar 📅</button>
     <button class="tap-btn" id="askBtn">Ask the Ball 🎱</button>
     <button class="share-btn" id="shareBtn" disabled>Share Result 📤</button>
     <div class="share-status" id="shareStatus" aria-live="polite"></div>
+  </div>
+
+  <div class="actions commit-confirm" id="commitConfirm" hidden>
+    <div class="confirm-check">✅</div>
+    <p class="confirm-text">Added to your calendar!</p>
+    <p class="confirm-subtext">This only updates your own calendar — reply in the thread so the group actually knows you're in.</p>
+    <p class="reply-preview">"I'm in! 🍺"</p>
+    <button class="share-btn" id="copyReplyBtn" type="button">Copy Reply Text</button>
   </div>
 
   <div class="share-modal" id="shareModal">
@@ -641,31 +713,39 @@
   //                project's zero-network-dependency rule)
   //   rangeStart/rangeEnd - YYYY-MM-DD bounds used to check whether this
   //                event falls within the upcoming Fri-Sun weekend
+  //   calendarStart (optional) - "YYYY-MM-DDTHH:MM:SS" local Pacific
+  //                wall-clock kickoff time, for events with a known start
+  //                time (games). Paired with calendarDurationHours to build
+  //                the Add to Calendar entry (see buildCalendarInfo()).
+  //                Festivals have no single start time and omit both fields
+  //                — Add to Calendar treats them as all-day across
+  //                rangeStart/rangeEnd instead.
   const upcomingEvents = [
     // Mariners homestand vs. Athletics (T-Mobile Park, SoDo)
-    { name: "the Mariners game", metaLine: "vs. Athletics · Fri, Sep 4 · 7:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-04", rangeEnd: "2026-09-04" },
-    { name: "the Mariners game", metaLine: "vs. Athletics · Sat, Sep 5 · 6:40 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-05", rangeEnd: "2026-09-05" },
-    { name: "the Mariners game", metaLine: "vs. Athletics · Sun, Sep 6 · 1:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-06", rangeEnd: "2026-09-06" },
+    { name: "the Mariners game", metaLine: "vs. Athletics · Fri, Sep 4 · 7:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-04", rangeEnd: "2026-09-04", calendarStart: "2026-09-04T19:10:00", calendarDurationHours: 3 },
+    { name: "the Mariners game", metaLine: "vs. Athletics · Sat, Sep 5 · 6:40 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-05", rangeEnd: "2026-09-05", calendarStart: "2026-09-05T18:40:00", calendarDurationHours: 3 },
+    { name: "the Mariners game", metaLine: "vs. Athletics · Sun, Sep 6 · 1:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-06", rangeEnd: "2026-09-06", calendarStart: "2026-09-06T13:10:00", calendarDurationHours: 3 },
     // Mariners homestand vs. Angels
-    { name: "the Mariners game", metaLine: "vs. Angels · Fri, Sep 25 · 7:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-25", rangeEnd: "2026-09-25" },
-    { name: "the Mariners game", metaLine: "vs. Angels · Sat, Sep 26 · 6:40 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-26", rangeEnd: "2026-09-26" },
-    { name: "the Mariners game", metaLine: "vs. Angels · Sun, Sep 27 · 12:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-27", rangeEnd: "2026-09-27" },
+    { name: "the Mariners game", metaLine: "vs. Angels · Fri, Sep 25 · 7:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-25", rangeEnd: "2026-09-25", calendarStart: "2026-09-25T19:10:00", calendarDurationHours: 3 },
+    { name: "the Mariners game", metaLine: "vs. Angels · Sat, Sep 26 · 6:40 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-26", rangeEnd: "2026-09-26", calendarStart: "2026-09-26T18:40:00", calendarDurationHours: 3 },
+    { name: "the Mariners game", metaLine: "vs. Angels · Sun, Sep 27 · 12:10 PM", mapQuery: "T-Mobile Park, Seattle, WA", rangeStart: "2026-09-27", rangeEnd: "2026-09-27", calendarStart: "2026-09-27T12:10:00", calendarDurationHours: 3 },
     // Kraken (Climate Pledge Arena, Uptown / Seattle Center)
-    { name: "the Kraken preseason game", metaLine: "vs. Canucks · Sat, Sep 19 · 7:00 PM", mapQuery: "Climate Pledge Arena, Seattle, WA", rangeStart: "2026-09-19", rangeEnd: "2026-09-19" },
-    { name: "the Kraken home opener", metaLine: "vs. Flames · Sun, Oct 4 · 5:00 PM", mapQuery: "Climate Pledge Arena, Seattle, WA", rangeStart: "2026-10-04", rangeEnd: "2026-10-04" },
-    { name: "the Kraken game", metaLine: "vs. Wild · Sat, Oct 24 · 7:00 PM", mapQuery: "Climate Pledge Arena, Seattle, WA", rangeStart: "2026-10-24", rangeEnd: "2026-10-24" },
+    { name: "the Kraken preseason game", metaLine: "vs. Canucks · Sat, Sep 19 · 7:00 PM", mapQuery: "Climate Pledge Arena, Seattle, WA", rangeStart: "2026-09-19", rangeEnd: "2026-09-19", calendarStart: "2026-09-19T19:00:00", calendarDurationHours: 2.5 },
+    { name: "the Kraken home opener", metaLine: "vs. Flames · Sun, Oct 4 · 5:00 PM", mapQuery: "Climate Pledge Arena, Seattle, WA", rangeStart: "2026-10-04", rangeEnd: "2026-10-04", calendarStart: "2026-10-04T17:00:00", calendarDurationHours: 2.5 },
+    { name: "the Kraken game", metaLine: "vs. Wild · Sat, Oct 24 · 7:00 PM", mapQuery: "Climate Pledge Arena, Seattle, WA", rangeStart: "2026-10-24", rangeEnd: "2026-10-24", calendarStart: "2026-10-24T19:00:00", calendarDurationHours: 2.5 },
     // Seahawks (Lumen Field, SoDo)
-    { name: "the Seahawks game", metaLine: "vs. Chargers · Sun, Oct 4 · 1:25 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-04", rangeEnd: "2026-10-04" },
-    { name: "the Seahawks game", metaLine: "vs. 49ers · Sun, Oct 11 · 1:25 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-11", rangeEnd: "2026-10-11" },
-    { name: "the Seahawks game", metaLine: "vs. Chiefs (SNF) · Sun, Oct 25 · 5:20 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-25", rangeEnd: "2026-10-25" },
+    { name: "the Seahawks game", metaLine: "vs. Chargers · Sun, Oct 4 · 1:25 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-04", rangeEnd: "2026-10-04", calendarStart: "2026-10-04T13:25:00", calendarDurationHours: 3.5 },
+    { name: "the Seahawks game", metaLine: "vs. 49ers · Sun, Oct 11 · 1:25 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-11", rangeEnd: "2026-10-11", calendarStart: "2026-10-11T13:25:00", calendarDurationHours: 3.5 },
+    { name: "the Seahawks game", metaLine: "vs. Chiefs (SNF) · Sun, Oct 25 · 5:20 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-25", rangeEnd: "2026-10-25", calendarStart: "2026-10-25T17:20:00", calendarDurationHours: 3.5 },
     // Sounders FC (Lumen Field, SoDo)
-    { name: "the Sounders match", metaLine: "vs. NY Red Bulls · Sat, Sep 5 · 5:30 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-09-05", rangeEnd: "2026-09-05" },
-    { name: "the Sounders match", metaLine: "vs. Minnesota United · Sat, Sep 26 · 5:30 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-09-26", rangeEnd: "2026-09-26" },
-    { name: "the Sounders match", metaLine: "vs. CF Montréal · Sat, Oct 17 · 7:30 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-17", rangeEnd: "2026-10-17" },
-    // Drink-focused festivals
+    { name: "the Sounders match", metaLine: "vs. NY Red Bulls · Sat, Sep 5 · 5:30 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-09-05", rangeEnd: "2026-09-05", calendarStart: "2026-09-05T17:30:00", calendarDurationHours: 2.5 },
+    { name: "the Sounders match", metaLine: "vs. Minnesota United · Sat, Sep 26 · 5:30 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-09-26", rangeEnd: "2026-09-26", calendarStart: "2026-09-26T17:30:00", calendarDurationHours: 2.5 },
+    { name: "the Sounders match", metaLine: "vs. CF Montréal · Sat, Oct 17 · 7:30 PM", mapQuery: "Lumen Field, Seattle, WA", rangeStart: "2026-10-17", rangeEnd: "2026-10-17", calendarStart: "2026-10-17T19:30:00", calendarDurationHours: 2.5 },
+    // Drink-focused festivals — no single start time (calendarStart
+    // omitted on purpose), so Add to Calendar treats these as all-day.
     { name: "Fremont Oktoberfest", metaLine: "Fri–Sun, Sep 18–20", mapQuery: "Fremont Oktoberfest, Seattle, WA", rangeStart: "2026-09-18", rangeEnd: "2026-09-20" },
     { name: "Cider Summit Seattle", metaLine: "Fri–Sat, Sep 11–12", mapQuery: "South Lake Union Discovery Center, Seattle, WA", rangeStart: "2026-09-11", rangeEnd: "2026-09-12" },
-    { name: "the Great Pumpkin Beer Festival", metaLine: "Sat, Oct 3 · 4–10 PM", mapQuery: "Elysian Capitol Hill Brewery, Seattle, WA", rangeStart: "2026-10-03", rangeEnd: "2026-10-03" },
+    { name: "the Great Pumpkin Beer Festival", metaLine: "Sat, Oct 3 · 4–10 PM", mapQuery: "Elysian Capitol Hill Brewery, Seattle, WA", rangeStart: "2026-10-03", rangeEnd: "2026-10-03", calendarStart: "2026-10-03T16:00:00", calendarDurationHours: 6 },
     { name: "Leavenworth Oktoberfest", metaLine: "Fri–Sat, Oct 2–3", mapQuery: "Leavenworth Oktoberfest, Leavenworth, WA", rangeStart: "2026-10-02", rangeEnd: "2026-10-03" },
     { name: "Leavenworth Oktoberfest", metaLine: "Fri–Sat, Oct 9–10", mapQuery: "Leavenworth Oktoberfest, Leavenworth, WA", rangeStart: "2026-10-09", rangeEnd: "2026-10-10" },
     { name: "Leavenworth Oktoberfest", metaLine: "Fri–Sat, Oct 16–17", mapQuery: "Leavenworth Oktoberfest, Leavenworth, WA", rangeStart: "2026-10-16", rangeEnd: "2026-10-17" }
@@ -750,19 +830,170 @@
     return venue.name.toLowerCase().includes(venue.hood.toLowerCase()) ? '' : venue.hood;
   }
 
-  function venueMapUrl(venue) {
-    if (venue.mapQuery) {
-      return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(venue.mapQuery);
-    }
+  // Plain "<place>, Seattle, WA"-style text — shared by the Get Directions
+  // Maps link and the Add to Calendar LOCATION field so the two stay
+  // consistent instead of building this string twice.
+  function venueLocationText(venue) {
+    if (venue.mapQuery) return venue.mapQuery;
     const searchName = venue.mapName || venue.name;
-    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(searchName + ', Seattle, WA');
+    return searchName + ', Seattle, WA';
   }
 
-  // The published artifact URL — also the base for deep links (see
+  function venueMapUrl(venue) {
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(venueLocationText(venue));
+  }
+
+  // --- Add to Calendar ------------------------------------------------
+  // Builds a downloadable .ics file for the current result, available in
+  // every mode. Upcoming-mode games carry a real machine-readable start
+  // time (calendarStart/calendarDurationHours); Upcoming-mode festivals
+  // have no single start time and become an all-day entry across
+  // rangeStart/rangeEnd instead. The other three modes have no date at
+  // all in their data, so they default to the nearest upcoming Friday
+  // (the same "weekend" upcomingWeekendRange() already computes) at
+  // 7:00 PM for a 3-hour block — a starting point anyone can edit after
+  // adding it, not a claim about exactly when you'll be there.
+  const DEFAULT_EVENT_HOUR = 19; // 7:00 PM
+  const DEFAULT_EVENT_DURATION_HOURS = 3;
+
+  // Finds the UTC offset America/Los_Angeles uses on a given Y/M/D (-7 in
+  // PDT, -8 in PST), via Intl rather than a hardcoded DST table, so a
+  // Pacific wall-clock time converts to the correct UTC instant regardless
+  // of the visitor's own timezone or which side of a DST changeover the
+  // event falls on.
+  function pacificOffsetMinutes(year, month, day) {
+    try {
+      const probe = new Date(Date.UTC(year, month - 1, day, 20));
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        timeZoneName: 'shortOffset'
+      }).formatToParts(probe);
+      const tzPart = parts.find(function (p) { return p.type === 'timeZoneName'; });
+      const match = tzPart && tzPart.value.match(/GMT([+-]\d+)/);
+      return match ? parseInt(match[1], 10) * 60 : -480;
+    } catch (e) {
+      return -480; // PST fallback if Intl support is missing
+    }
+  }
+
+  function pacificToUtcDate(year, month, day, hour, minute) {
+    const offsetMin = pacificOffsetMinutes(year, month, day);
+    return new Date(Date.UTC(year, month - 1, day, hour, minute) - offsetMin * 60000);
+  }
+
+  function icsUtcStamp(d) {
+    return d.getUTCFullYear() + pad2(d.getUTCMonth() + 1) + pad2(d.getUTCDate()) + 'T' +
+      pad2(d.getUTCHours()) + pad2(d.getUTCMinutes()) + pad2(d.getUTCSeconds()) + 'Z';
+  }
+
+  function icsDateOnly(dateStr) { return dateStr.replace(/-/g, ''); }
+
+  // Adds `days` calendar days to a YYYY-MM-DD string — used for the
+  // all-day DTEND, which ICS defines as exclusive.
+  function addDaysToDateStr(dateStr, days) {
+    const parts = dateStr.split('-').map(Number);
+    return toDateStr(new Date(parts[0], parts[1] - 1, parts[2] + days));
+  }
+
+  function icsEscape(text) {
+    return String(text)
+      .replace(/\\/g, '\\\\')
+      .replace(/;/g, '\\;')
+      .replace(/,/g, '\\,')
+      .replace(/\n/g, '\\n');
+  }
+
+  // Works out what the calendar entry should say for the current result —
+  // title, location, and either a timed start/duration or an all-day
+  // range — reading module state (`mode`) the same way nextAnswer() does.
+  function buildCalendarInfo(venue, resultText) {
+    const title = resultText;
+    const location = venueLocationText(venue);
+
+    if (mode === 'upcoming' && venue.calendarStart) {
+      const m = venue.calendarStart.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      return {
+        title: title, location: location, allDay: false,
+        year: parseInt(m[1], 10), month: parseInt(m[2], 10), day: parseInt(m[3], 10),
+        hour: parseInt(m[4], 10), minute: parseInt(m[5], 10),
+        durationHours: venue.calendarDurationHours || DEFAULT_EVENT_DURATION_HOURS
+      };
+    }
+
+    if (mode === 'upcoming') {
+      // A festival with no single start time — all-day across its range.
+      return {
+        title: title, location: location, allDay: true,
+        startDateStr: venue.rangeStart,
+        endDateStrExclusive: addDaysToDateStr(venue.rangeEnd, 1)
+      };
+    }
+
+    // Degenerate / Low-Key / Cocktail — default to the nearest upcoming
+    // Friday at 7:00 PM.
+    const nearestFriday = upcomingWeekendRange(new Date()).start;
+    const parts = nearestFriday.split('-').map(Number);
+    return {
+      title: title, location: location, allDay: false,
+      year: parts[0], month: parts[1], day: parts[2],
+      hour: DEFAULT_EVENT_HOUR, minute: 0,
+      durationHours: DEFAULT_EVENT_DURATION_HOURS
+    };
+  }
+
+  function buildIcsBlob(info) {
+    const uid = 'weekend-activity-ball-' + Date.now() + '-' + Math.floor(Math.random() * 100000) + '@wolfgang425.github.io';
+    const dtstamp = icsUtcStamp(new Date());
+    let dtstartLine, dtendLine;
+
+    if (info.allDay) {
+      dtstartLine = 'DTSTART;VALUE=DATE:' + icsDateOnly(info.startDateStr);
+      dtendLine = 'DTEND;VALUE=DATE:' + icsDateOnly(info.endDateStrExclusive);
+    } else {
+      const startUtc = pacificToUtcDate(info.year, info.month, info.day, info.hour, info.minute);
+      const endUtc = new Date(startUtc.getTime() + info.durationHours * 3600000);
+      dtstartLine = 'DTSTART:' + icsUtcStamp(startUtc);
+      dtendLine = 'DTEND:' + icsUtcStamp(endUtc);
+    }
+
+    const lines = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Weekend Activity Ball//EN', 'CALSCALE:GREGORIAN',
+      'BEGIN:VEVENT',
+      'UID:' + uid,
+      'DTSTAMP:' + dtstamp,
+      dtstartLine, dtendLine,
+      'SUMMARY:' + icsEscape(info.title),
+      'LOCATION:' + icsEscape(info.location),
+      'END:VEVENT', 'END:VCALENDAR'
+    ];
+    return new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/calendar;charset=utf-8' });
+  }
+
+  // Triggers the .ics open/download from a click handler without needing
+  // a pre-existing <a> at the call site — same object-URL pattern the
+  // share card image already uses (see buildShareCardBlob/openShareModal).
+  // Known limitation: on the claude.ai artifact mirror (a sandboxed
+  // hosting iframe), a script-triggered download like this is inert —
+  // the same category of issue documented for native Web Share above.
+  // It works normally on the canonical GitHub Pages copy.
+  function downloadIcs(blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'weekend-activity-ball.ics';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  // The canonical hosted URL — also the base for deep links (see
   // buildShareUrl/hydrateFromUrl below), so a shared link reproduces the
   // exact roll it was generated from instead of handing the recipient a
-  // fresh random one.
-  const SHARE_BASE_URL = 'https://claude.ai/code/artifact/7c490af5-b43c-49be-8159-ff059050139b';
+  // fresh random one. Hosted on GitHub Pages (not the claude.ai artifact)
+  // because the artifact's sandboxed iframe blocks the native Web Share
+  // file-attachment path on iOS Safari.
+  const SHARE_BASE_URL = 'https://wolfgang425.github.io/weekend-activity-ball/';
 
   // Encodes one specific roll (mode + verb + amount + crew + which venue)
   // as query params on the app's own URL. Loading that URL re-renders this
@@ -784,9 +1015,13 @@
   const ball = document.getElementById('ball');
   const ballWrap = document.getElementById('ballWrap');
   const windowText = document.getElementById('windowText');
+  const actions = document.getElementById('actions');
   const askBtn = document.getElementById('askBtn');
   const shareBtn = document.getElementById('shareBtn');
   const shareStatus = document.getElementById('shareStatus');
+  const commitBtn = document.getElementById('commitBtn');
+  const commitConfirm = document.getElementById('commitConfirm');
+  const copyReplyBtn = document.getElementById('copyReplyBtn');
   const shareModal = document.getElementById('shareModal');
   const shareImage = document.getElementById('shareImage');
   const shareModalCaption = document.getElementById('shareModalCaption');
@@ -797,6 +1032,8 @@
   const venueMeta = document.getElementById('venueMeta');
   const venueHood = document.getElementById('venueHood');
   const venueMapLink = document.getElementById('venueMapLink');
+  const venueCalendarLink = document.getElementById('venueCalendarLink');
+  const calendarSep = document.getElementById('calendarSep');
   // Mode dropdown — a themed button + listbox panel, replacing the old
   // 4-across pill toggle (which started stretching the layout once a
   // fourth mode was added). Follows the standard listbox pattern: button
@@ -808,11 +1045,14 @@
   const modeDropdownList = document.getElementById('modeDropdownList');
   const modeOptions = Array.from(modeDropdownList.querySelectorAll('.mode-dropdown-option'));
   const modeLabels = { degenerate: 'Degenerate', lowkey: 'Low-Key', cocktail: 'Cocktail', upcoming: 'Upcoming' };
+  // Upcoming mode is paused (its dropdown <li> is commented out above), so
+  // this element won't exist right now — guarded rather than removed so
+  // re-enabling the mode doesn't require touching this block.
   const modeUpcomingOption = document.getElementById('modeUpcoming');
 
   // If nothing qualifies this weekend, grey out the Upcoming option rather
   // than let someone select a mode that can't produce an answer.
-  if (computeUpcomingPool().length === 0) {
+  if (modeUpcomingOption && computeUpcomingPool().length === 0) {
     modeUpcomingOption.setAttribute('aria-disabled', 'true');
     modeUpcomingOption.title = 'No qualifying events this weekend — check back soon.';
   }
@@ -1293,9 +1533,86 @@
     }
   }
 
+  // Which calendar entry the currently-showing result would create, and
+  // the object URL currently backing venueCalendarLink's href (revoked and
+  // rebuilt on every new result so unused blobs don't pile up).
+  let currentCalendarInfo = null;
+  let calendarObjectUrl = null;
+
+  function setCalendarLinkHref(info) {
+    if (calendarObjectUrl) { URL.revokeObjectURL(calendarObjectUrl); calendarObjectUrl = null; }
+    if (!info) {
+      venueCalendarLink.removeAttribute('href');
+      venueCalendarLink.removeAttribute('download');
+      return;
+    }
+    calendarObjectUrl = URL.createObjectURL(buildIcsBlob(info));
+    venueCalendarLink.href = calendarObjectUrl;
+    venueCalendarLink.download = 'weekend-activity-ball.ics';
+  }
+
+  // The three action-area states: a fresh roll on your own device (small
+  // Add to Calendar link, Share Result primary); a friend arriving via a
+  // shared link (I'm In — Add to Calendar becomes primary, the small
+  // venue-meta calendar link is hidden so it isn't offered twice); and the
+  // confirmation shown right after tapping I'm In (see showCommitConfirmation).
+  function showOwnRollActions() {
+    actions.hidden = false;
+    actions.classList.remove('shared-view');
+    commitBtn.hidden = true;
+    commitConfirm.hidden = true;
+    askBtn.textContent = 'Ask again 🎱';
+    venueCalendarLink.style.display = '';
+    calendarSep.style.display = '';
+  }
+
+  function showSharedViewActions() {
+    actions.hidden = false;
+    actions.classList.add('shared-view');
+    commitBtn.hidden = false;
+    commitBtn.disabled = false;
+    commitConfirm.hidden = true;
+    askBtn.textContent = 'or ask the ball for something else';
+    shareBtn.className = 'share-btn';
+    venueCalendarLink.style.display = 'none';
+    calendarSep.style.display = 'none';
+  }
+
+  function showCommitConfirmation() {
+    actions.hidden = true;
+    commitConfirm.hidden = false;
+  }
+
+  venueCalendarLink.addEventListener('click', function (e) {
+    if (!venueCalendarLink.getAttribute('href')) e.preventDefault();
+  });
+
+  commitBtn.addEventListener('click', function () {
+    if (!currentCalendarInfo) return;
+    downloadIcs(buildIcsBlob(currentCalendarInfo));
+    showCommitConfirmation();
+  });
+
+  copyReplyBtn.addEventListener('click', async function () {
+    const replyText = "I'm in! 🍺";
+    try {
+      await navigator.clipboard.writeText(replyText);
+      copyReplyBtn.textContent = 'Copied!';
+      setTimeout(function () { copyReplyBtn.textContent = 'Copy Reply Text'; }, 1500);
+    } catch (e) {
+      console.warn('Weekend Activity Ball: reply copy failed, select the text manually', e);
+      copyReplyBtn.textContent = 'Select text above ↑';
+      setTimeout(function () { copyReplyBtn.textContent = 'Copy Reply Text'; }, 2000);
+    }
+  });
+
   function ask() {
     if (busy) return;
     busy = true;
+    // A tap can arrive while the commit-confirmation panel is showing (the
+    // ball itself is always clickable) — bring the normal actions back
+    // right away rather than waiting for the roll to finish.
+    showOwnRollActions();
     askBtn.disabled = true;
     shareBtn.disabled = true;
     hint.style.display = '';
@@ -1330,7 +1647,10 @@
         venueMapLink.href = venueMapUrl(result.venue);
         venueMeta.classList.add('visible');
         prepareShareImage(result.text, buildShareUrl(result.venue, result.verb, result.amount, result.crew));
+        showOwnRollActions();
         setPrimaryCta('share');
+        currentCalendarInfo = buildCalendarInfo(result.venue, result.text);
+        setCalendarLinkHref(currentCalendarInfo);
       } else {
         // Upcoming mode came up empty (e.g. pool changed mid-session) — no
         // venue to show or share, so this is the one case that still needs
@@ -1339,7 +1659,10 @@
         hint.textContent = 'Try another mode for a weekend activity.';
         shareBlob = null;
         shareBtn.disabled = true;
+        showOwnRollActions();
         setPrimaryCta('ask');
+        currentCalendarInfo = null;
+        setCalendarLinkHref(null);
       }
 
       askBtn.disabled = false;
@@ -1405,7 +1728,12 @@
       hint.style.display = 'none';
       hint.textContent = '';
       prepareShareImage(text, buildShareUrl(venue, v, a, c));
-      setPrimaryCta('share');
+      // Arriving via someone else's shared link is a different moment than
+      // rolling it yourself — see showSharedViewActions() — so this branch
+      // manages the action-area state directly instead of calling
+      // setPrimaryCta(), which is only for the plain own-roll toggle.
+      currentCalendarInfo = buildCalendarInfo(venue, text);
+      showSharedViewActions();
     } else {
       // The underlying data moved on (e.g. this event was pruned by the
       // weekly refresh, or the static venue list changed) — same graceful
@@ -1414,6 +1742,8 @@
       hint.textContent = m === 'upcoming'
         ? "That one's already come and gone — ask the ball for what's next."
         : "Couldn't find that one anymore — ask the ball for something new.";
+      currentCalendarInfo = null;
+      showOwnRollActions();
       setPrimaryCta('ask');
     }
 
