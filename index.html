@@ -324,6 +324,17 @@
     margin-top: 6px;
   }
 
+  /* .actions sets its own `display`, which otherwise beats the browser's
+     built-in `[hidden] { display: none }` rule for any element carrying
+     this class (author styles always win over that default, regardless of
+     selector specificity) — so both #actions (hidden after a calendar
+     commit) and #commitConfirm (hidden until one happens) need this
+     explicit override to actually disappear instead of rendering on top of
+     the visible panel. Same pattern as .mode-dropdown-list[hidden] above. */
+  .actions[hidden] {
+    display: none;
+  }
+
   button.share-btn {
     font-family: 'Work Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: transparent;
