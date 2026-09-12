@@ -521,6 +521,26 @@
     border-radius: 10px;
     border: 1px solid rgba(245, 166, 35, 0.2);
   }
+
+  /* Live "who's in" list — populated from Firestore (see subscribeToRoll).
+     Hidden entirely when there are zero RSVPs yet, same [hidden]-override
+     pattern used elsewhere in this file (see the .actions[hidden] comment
+     above) since this element could pick up a flex/block author rule later. */
+  .rsvp-list {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-align: center;
+    max-width: 320px;
+    line-height: 1.5;
+  }
+
+  .rsvp-list[hidden] {
+    display: none;
+  }
+
+  .rsvp-list strong {
+    color: var(--amber);
+  }
 </style>
 </head>
 <body>
@@ -569,6 +589,7 @@
     <button class="tap-btn" id="askBtn">Ask the Ball 🎱</button>
     <button class="share-btn" id="shareBtn" disabled>Share Result 📤</button>
     <div class="share-status" id="shareStatus" aria-live="polite"></div>
+    <div class="rsvp-list" id="rsvpList" hidden aria-live="polite"></div>
   </div>
 
   <div class="actions commit-confirm" id="commitConfirm" hidden>
@@ -577,6 +598,7 @@
     <p class="confirm-subtext">This only updates your own calendar — reply in the thread so the group actually knows you're in.</p>
     <p class="reply-preview">"I'm in! 🍺"</p>
     <button class="share-btn" id="copyReplyBtn" type="button">Copy Reply Text</button>
+    <div class="rsvp-list" id="rsvpListConfirm" hidden aria-live="polite"></div>
   </div>
 
   <div class="share-modal" id="shareModal">
@@ -589,7 +611,39 @@
     </div>
   </div>
 
-<script>
+<script type="module">
+  // --- Firebase (added for live RSVP tracking) ---------------------------
+  // This is a deliberate, discussed exception to this project's original
+  // "no live network calls, everything hardcoded" rule (see
+  // project-instructions.md). It exists for exactly one job: letting
+  // everyone who opens a shared link see a live, shared "who's in" list —
+  // something a static file genuinely cannot do on its own. Nothing else
+  // in the app (venue data, amounts, verbs, mode logic) talks to a network.
+  // The config below is a public client identifier, not a secret — Firebase
+  // enforces access via the Firestore security rules set in the console,
+  // not by hiding this object. Requires `type="module"` on this script tag
+  // so the `import` statements below can resolve before anything else in
+  // this file runs.
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import {
+    getFirestore, collection, doc, addDoc, getDoc, updateDoc,
+    onSnapshot, arrayUnion, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDTq97EDpsZpWKexq_mhOWMlLyaZCmaCSU",
+    authDomain: "weekend-activity-ball.firebaseapp.com",
+    databaseURL: "https://weekend-activity-ball-default-rtdb.firebaseio.com",
+    projectId: "weekend-activity-ball",
+    storageBucket: "weekend-activity-ball.firebasestorage.app",
+    messagingSenderId: "851951464926",
+    appId: "1:851951464926:web:e3da87a6c07219d396ed4f",
+    measurementId: "G-2P5NSZ577F"
+  };
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+  const ROLLS_COLLECTION = 'rolls';
+
 (function () {
   // The answer is built from a template: VERB + AMOUNT + "at" + VENUE + "with" + CREW.
   const verbs = ["Drink", "Crush", "Pound", "Down", "Throw back", "Slam", "Demolish", "Knock back", "Suck down", "Put away"];
@@ -1007,12 +1061,12 @@
   const SHARE_BASE_URL = 'https://wolfgang425.github.io/weekend-activity-ball/';
 
   // Encodes one specific roll (mode + verb + amount + crew + which venue)
-  // as query params on the app's own URL. Loading that URL re-renders this
-  // exact result via hydrateFromUrl() instead of asking the ball fresh —
-  // pure client-side string building, no backend involved. Upcoming-mode
-  // events also carry rangeStart since their `name` alone isn't unique
-  // (e.g. multiple "the Mariners game" entries on different dates).
-  function buildShareUrl(venue, verb, amount, crew) {
+  // as query params on the app's own URL. This is the ORIGINAL, pre-Firebase
+  // scheme — kept only so links already shared before this change keep
+  // working, and as a fallback if writing a live roll doc to Firestore
+  // fails (e.g. the visitor is offline). Links built this way have no live
+  // "who's in" list, since there's no shared doc backing them.
+  function buildShareUrlLegacy(venue, verb, amount, crew) {
     const params = new URLSearchParams();
     params.set('m', mode);
     params.set('v', verb);
@@ -1021,6 +1075,80 @@
     params.set('vn', venue.name);
     if (mode === 'upcoming' && venue.rangeStart) params.set('vd', venue.rangeStart);
     return SHARE_BASE_URL + '?' + params.toString();
+  }
+
+  // Current share-link scheme: one Firestore document per roll, referenced
+  // by its doc ID as a single `r` param. Loading that URL fetches the doc
+  // and subscribes to it live, so everyone who opens the link watches the
+  // same "who's in" list update in real time (see createRollDoc/
+  // subscribeToRoll below) — the one thing the old pure-URL scheme could
+  // never do on its own.
+  function buildShareUrl(rollId) {
+    return SHARE_BASE_URL + '?r=' + encodeURIComponent(rollId);
+  }
+
+  // Writes a new roll to Firestore so it can carry a live RSVP list.
+  // Stores enough to re-render the result (mode/verb/amount/crew/venue
+  // name, plus rangeStart for Upcoming-mode venues whose name alone isn't
+  // unique) without needing anything beyond the venue name + mode later.
+  // Returns the new doc's ID, or throws if Firestore can't be reached —
+  // callers fall back to buildShareUrlLegacy in that case.
+  async function createRollDoc(result, currentMode) {
+    const payload = {
+      mode: currentMode,
+      verb: result.verb,
+      amount: result.amount,
+      crew: result.crew,
+      venueName: result.venue.name,
+      venueDate: (currentMode === 'upcoming' && result.venue.rangeStart) ? result.venue.rangeStart : null,
+      text: result.text,
+      createdAt: serverTimestamp(),
+      rsvps: []
+    };
+    const ref = await addDoc(collection(db, ROLLS_COLLECTION), payload);
+    return ref.id;
+  }
+
+  let unsubscribeRsvp = null;
+
+  // Live-subscribes to a roll doc's `rsvps` array and re-renders the
+  // "who's in" list on every change — this is what makes the RSVP list
+  // shared rather than local. Replaces any previous subscription so a
+  // fresh roll (or leaving a shared view) doesn't keep listening to a
+  // stale doc in the background.
+  function subscribeToRoll(rollId) {
+    if (unsubscribeRsvp) { unsubscribeRsvp(); unsubscribeRsvp = null; }
+    const ref = doc(db, ROLLS_COLLECTION, rollId);
+    unsubscribeRsvp = onSnapshot(ref, function (snap) {
+      if (!snap.exists()) return;
+      renderRsvpList(snap.data().rsvps || []);
+    }, function (err) {
+      console.error('Weekend Activity Ball: RSVP live update failed', err);
+    });
+  }
+
+  function renderRsvpList(rsvps) {
+    const targets = [document.getElementById('rsvpList'), document.getElementById('rsvpListConfirm')];
+    const names = rsvps.map(function (r) { return r.name; }).filter(Boolean);
+    targets.forEach(function (el) {
+      if (!el) return;
+      if (!names.length) {
+        el.hidden = true;
+        el.textContent = '';
+        return;
+      }
+      el.hidden = false;
+      el.innerHTML = '<strong>In:</strong> ' + names.map(rsvpEscapeHtml).join(', ');
+    });
+  }
+
+  // Minimal HTML-escaping for names before they go into innerHTML above —
+  // names are free-text a stranger typed into a prompt(), so they must be
+  // escaped before display even though this is a low-stakes, no-login app.
+  function rsvpEscapeHtml(text) {
+    return String(text)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   const ball = document.getElementById('ball');
@@ -1550,6 +1678,12 @@
   let currentCalendarInfo = null;
   let calendarObjectUrl = null;
 
+  // The Firestore doc ID backing the currently-showing roll's live RSVP
+  // list, if one exists — null when Firestore couldn't be reached and the
+  // legacy no-backend link is being used instead, or before the write for
+  // a fresh roll has finished.
+  let currentRollId = null;
+
   function setCalendarLinkHref(info) {
     if (calendarObjectUrl) { URL.revokeObjectURL(calendarObjectUrl); calendarObjectUrl = null; }
     if (!info) {
@@ -1598,9 +1732,30 @@
     if (!venueCalendarLink.getAttribute('href')) e.preventDefault();
   });
 
-  commitBtn.addEventListener('click', function () {
+  commitBtn.addEventListener('click', async function () {
     if (!currentCalendarInfo) return;
     downloadIcs(buildIcsBlob(currentCalendarInfo));
+
+    // Named RSVP: ask once, in-memory only for this page load — not saved
+    // to localStorage/sessionStorage, since this file is also published as
+    // a claude.ai artifact and browser storage APIs aren't supported there.
+    // If there's no live roll doc (Firestore write failed earlier, or this
+    // is a legacy link), there's nowhere to record the RSVP, so skip
+    // straight to the confirmation panel without asking for a name.
+    if (currentRollId) {
+      const name = (window.prompt("What's your name, so the group can see you're in?") || '').trim();
+      if (name) {
+        try {
+          await updateDoc(doc(db, ROLLS_COLLECTION, currentRollId), {
+            rsvps: arrayUnion({ name: name, respondedAt: new Date().toISOString() })
+          });
+        } catch (e) {
+          console.error('Weekend Activity Ball: RSVP write failed', e);
+          shareStatus.textContent = "Added to your calendar, but couldn't record your RSVP — check your connection and try again.";
+        }
+      }
+    }
+
     showCommitConfirmation();
   });
 
@@ -1633,6 +1788,9 @@
     windowText.classList.remove('visible');
     windowText.classList.add('placeholder');
     windowText.textContent = '...';
+    if (unsubscribeRsvp) { unsubscribeRsvp(); unsubscribeRsvp = null; }
+    currentRollId = null;
+    renderRsvpList([]);
 
     ball.classList.remove('shaking');
     void ball.offsetWidth;
@@ -1657,11 +1815,27 @@
         venueHood.textContent = hoodText ? hoodText + ' · ' : '';
         venueMapLink.href = venueMapUrl(result.venue);
         venueMeta.classList.add('visible');
-        prepareShareImage(result.text, buildShareUrl(result.venue, result.verb, result.amount, result.crew));
         showOwnRollActions();
         setPrimaryCta('share');
         currentCalendarInfo = buildCalendarInfo(result.venue, result.text);
         setCalendarLinkHref(currentCalendarInfo);
+
+        // Write this roll to Firestore so its share link carries a live
+        // "who's in" list. Share stays disabled (see prepareShareImage)
+        // until whichever link — Firestore-backed or legacy fallback —
+        // is ready, so a tap never goes out with a stale link.
+        currentRollId = null;
+        renderRsvpList([]);
+        const capturedResult = result, capturedMode = mode;
+        createRollDoc(capturedResult, capturedMode).then(function (rollId) {
+          if (mode !== capturedMode || windowText.textContent !== capturedResult.text) return; // superseded by a newer roll
+          currentRollId = rollId;
+          prepareShareImage(capturedResult.text, buildShareUrl(rollId));
+          subscribeToRoll(rollId);
+        }).catch(function (e) {
+          console.error('Weekend Activity Ball: could not create a live roll doc, falling back to a static link', e);
+          prepareShareImage(capturedResult.text, buildShareUrlLegacy(capturedResult.venue, capturedResult.verb, capturedResult.amount, capturedResult.crew));
+        });
       } else {
         // Upcoming mode came up empty (e.g. pool changed mid-session) — no
         // venue to show or share, so this is the one case that still needs
@@ -1674,6 +1848,9 @@
         setPrimaryCta('ask');
         currentCalendarInfo = null;
         setCalendarLinkHref(null);
+        if (unsubscribeRsvp) { unsubscribeRsvp(); unsubscribeRsvp = null; }
+        currentRollId = null;
+        renderRsvpList([]);
       }
 
       askBtn.disabled = false;
@@ -1685,12 +1862,109 @@
   ballWrap.addEventListener('click', ask);
   askBtn.addEventListener('click', ask);
 
-  // Reproduces a specific shared roll from URL query params (see
-  // buildShareUrl) instead of showing the "tap to ask" placeholder — so
-  // opening a shared link shows the exact result that was sent, not a
-  // fresh random one. Pure client-side: reads location.search once on
-  // load, no network call involved.
+  // Dispatches to whichever share-link scheme is present in the URL: the
+  // current Firestore-doc-backed `r` param (hydrateFromRollDoc, below), or
+  // the original param-based scheme for links shared before Firebase was
+  // added (hydrateFromUrlLegacy). Runs once on load.
   function hydrateFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('r')) {
+      hydrateFromRollDoc(params.get('r'));
+    } else {
+      hydrateFromUrlLegacy();
+    }
+  }
+
+  // Fetches a roll doc from Firestore and renders it, then subscribes to
+  // live RSVP updates on it — so opening a shared link shows the exact
+  // result that was sent AND a live-updating "who's in" list, rather than
+  // either a fresh random roll or a static one-time snapshot.
+  async function hydrateFromRollDoc(rollId) {
+    let snap;
+    try {
+      snap = await getDoc(doc(db, ROLLS_COLLECTION, rollId));
+    } catch (e) {
+      console.error('Weekend Activity Ball: could not load shared roll', e);
+      hint.style.display = '';
+      hint.textContent = "Couldn't reach the server for that link — check your connection and try again.";
+      try { window.history.replaceState(null, '', window.location.pathname); } catch (e2) {}
+      return;
+    }
+
+    if (!snap.exists()) {
+      hint.style.display = '';
+      hint.textContent = "Couldn't find that one anymore — ask the ball for something new.";
+      try { window.history.replaceState(null, '', window.location.pathname); } catch (e2) {}
+      return;
+    }
+
+    const data = snap.data();
+    const m = data.mode;
+    if (!modeLabels[m]) return;
+
+    let venuePool;
+    if (m === 'lowkey') venuePool = venues;
+    else if (m === 'cocktail') venuePool = speakeasyVenues;
+    else if (m === 'upcoming') venuePool = upcomingEvents; // full array, same
+    // reasoning as the legacy path below — a shared link to a past event
+    // should still resolve, not just ones still "this weekend."
+    else venuePool = venues;
+
+    let venue;
+    if (m === 'upcoming') {
+      venue = venuePool.find(function (ev) { return ev.name === data.venueName && ev.rangeStart === data.venueDate; });
+    } else {
+      venue = venuePool.find(function (ven) { return ven.name === data.venueName; });
+    }
+
+    mode = m;
+    modeOptions.forEach(function (o) {
+      const isActive = o.dataset.mode === mode;
+      o.classList.toggle('active', isActive);
+      o.setAttribute('aria-selected', String(isActive));
+    });
+    modeDropdownLabel.textContent = modeLabels[mode];
+
+    const text = data.text;
+    windowText.classList.remove('placeholder');
+    windowText.textContent = text;
+    windowText.classList.add('visible');
+    lastAnswer = text;
+    askBtn.textContent = 'Ask again 🎱';
+
+    if (venue) {
+      const hoodText = hoodDisplayText(venue);
+      venueHood.textContent = hoodText ? hoodText + ' · ' : '';
+      venueMapLink.href = venueMapUrl(venue);
+      venueMeta.classList.add('visible');
+      hint.style.display = 'none';
+      hint.textContent = '';
+      currentRollId = rollId;
+      prepareShareImage(text, buildShareUrl(rollId));
+      subscribeToRoll(rollId); // live "who's in" list for this shared roll
+      currentCalendarInfo = buildCalendarInfo(venue, text);
+      showSharedViewActions();
+    } else {
+      // The underlying venue/event data moved on since this was shared
+      // (e.g. pruned by a later refresh) — same graceful fallback tone as
+      // the legacy path.
+      hint.style.display = '';
+      hint.textContent = m === 'upcoming'
+        ? "That one's already come and gone — ask the ball for what's next."
+        : "Couldn't find that one anymore — ask the ball for something new.";
+      currentCalendarInfo = null;
+      currentRollId = null;
+      showOwnRollActions();
+      setPrimaryCta('ask');
+    }
+
+    try { window.history.replaceState(null, '', window.location.pathname); } catch (e) {}
+  }
+
+  // Reproduces a specific shared roll from the ORIGINAL (pre-Firebase) URL
+  // query-param scheme — kept so links shared before this change keep
+  // working. Pure client-side: reads location.search once, no network call.
+  function hydrateFromUrlLegacy() {
     const params = new URLSearchParams(window.location.search);
     const m = params.get('m');
     const v = params.get('v');
@@ -1738,7 +2012,8 @@
       venueMeta.classList.add('visible');
       hint.style.display = 'none';
       hint.textContent = '';
-      prepareShareImage(text, buildShareUrl(venue, v, a, c));
+      currentRollId = null; // no live doc backs a legacy link
+      prepareShareImage(text, buildShareUrlLegacy(venue, v, a, c));
       // Arriving via someone else's shared link is a different moment than
       // rolling it yourself — see showSharedViewActions() — so this branch
       // manages the action-area state directly instead of calling
