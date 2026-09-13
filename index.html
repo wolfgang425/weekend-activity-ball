@@ -776,6 +776,12 @@
     align-items: center;
     justify-content: space-between;
   }
+  /* Same pattern as .actions[hidden] elsewhere in this file: an author
+     rule setting `display` beats the browser's built-in [hidden]{display:
+     none} for any element carrying that class, so priceToggleRow needs
+     this explicit override to actually disappear in Cocktail mode instead
+     of rendering on top of (or squeezed among) the visible panel. */
+  .toggle-row[hidden] { display: none; }
   .toggle-row .toggle-label { font-size: 0.85rem; font-weight: 500; color: var(--foam); }
   .price-note {
     font-size: 0.7rem;
@@ -783,6 +789,7 @@
     margin-top: 6px;
     line-height: 1.4;
   }
+  .price-note[hidden] { display: none; }
   .switch {
     width: 40px; height: 22px; border-radius: 999px;
     background: rgba(245,166,35,0.2);
@@ -858,11 +865,11 @@
       <div class="field-label">NEIGHBORHOOD</div>
       <div class="neighborhood-select" id="neighborhoodSelect"></div>
     </div>
-    <div class="refine-row toggle-row">
+    <div class="refine-row toggle-row" id="priceToggleRow">
       <span class="toggle-label">Keep it cheap</span>
       <div class="switch" id="priceToggle" role="switch" aria-checked="false" tabindex="0"></div>
     </div>
-    <p class="price-note">Price data hasn't been verified per venue yet, so this doesn't filter results yet — it's just being captured for now.</p>
+    <p class="price-note" id="cocktailPriceNote" hidden>Not available in Cocktail mode — every venue here runs about the same.</p>
   </div>
 
   <div class="ball-wrap" id="ballWrap">
@@ -1070,51 +1077,56 @@
   // Static and hardcoded on purpose — no network calls, so nothing to break.
   // Each venue carries its neighborhood, used for the "Ballard" style caption
   // and the Google Maps search link under the ball.
+  // Price tiers ($/$$/$$$) added per venue-price-draft.md — see that file
+  // for confidence levels per row. Roughly a third were directly verified
+  // via web search (review/menu mentions of specific prices); the rest are
+  // inferred from the venue-type work in venue-type-draft.md, which is
+  // itself a best-effort guess. Powers the "Keep it cheap" Refine toggle.
   const venues = [
     // Capitol Hill
-    { name: "The Comet Tavern", hood: "Capitol Hill" },
-    { name: "Linda's Tavern", hood: "Capitol Hill" },
-    { name: "Captain Black's", hood: "Capitol Hill" },
-    { name: "The Pine Box", hood: "Capitol Hill" },
-    { name: "Rhein Haus", hood: "Capitol Hill" },
-    { name: "Crescent Lounge", hood: "Capitol Hill" },
+    { name: "The Comet Tavern", hood: "Capitol Hill", price: "$" },
+    { name: "Linda's Tavern", hood: "Capitol Hill", price: "$" },
+    { name: "Captain Black's", hood: "Capitol Hill", price: "$" },
+    { name: "The Pine Box", hood: "Capitol Hill", price: "$$" },
+    { name: "Rhein Haus", hood: "Capitol Hill", price: "$$" },
+    { name: "Crescent Lounge", hood: "Capitol Hill", price: "$" },
     // Ballard
-    { name: "King's Hardware", hood: "Ballard" },
-    { name: "George & Dragon Pub", hood: "Ballard" },
-    { name: "Hattie's Hat", hood: "Ballard" },
-    { name: "Sloop Tavern", hood: "Ballard" },
-    { name: "Ballard Smoke Shop", hood: "Ballard" },
-    { name: "Sunset Tavern", hood: "Ballard" },
-    { name: "Macleod's Scottish Pub", hood: "Ballard" },
-    { name: "Olaf's", hood: "Ballard" },
+    { name: "King's Hardware", hood: "Ballard", price: "$" },
+    { name: "George & Dragon Pub", hood: "Ballard", price: "$$" },
+    { name: "Hattie's Hat", hood: "Ballard", price: "$$" },
+    { name: "Sloop Tavern", hood: "Ballard", price: "$" },
+    { name: "Ballard Smoke Shop", hood: "Ballard", price: "$" },
+    { name: "Sunset Tavern", hood: "Ballard", price: "$" },
+    { name: "Macleod's Scottish Pub", hood: "Ballard", price: "$$" },
+    { name: "Olaf's", hood: "Ballard", price: "$" },
     // Fremont
-    { name: "Pacific Inn Pub", hood: "Fremont" },
+    { name: "Pacific Inn Pub", hood: "Fremont", price: "$" },
     // Phinney Ridge
-    { name: "Tin Hat Bar & Grill", hood: "Phinney Ridge" },
-    { name: "Sully's Snowgoose Saloon", hood: "Phinney Ridge" },
+    { name: "Tin Hat Bar & Grill", hood: "Phinney Ridge", price: "$$" },
+    { name: "Sully's Snowgoose Saloon", hood: "Phinney Ridge", price: "$" },
     // Queen Anne
-    { name: "Streamline Tavern", hood: "Queen Anne" },
-    { name: "Targy's Tavern", hood: "Queen Anne" },
+    { name: "Streamline Tavern", hood: "Queen Anne", price: "$" },
+    { name: "Targy's Tavern", hood: "Queen Anne", price: "$" },
     // University District
-    { name: "Blue Moon Tavern", hood: "University District" },
-    { name: "College Inn Pub", hood: "University District" },
+    { name: "Blue Moon Tavern", hood: "University District", price: "$" },
+    { name: "College Inn Pub", hood: "University District", price: "$" },
     // Georgetown
-    { name: "Jules Maes Saloon", hood: "Georgetown" },
-    { name: "Marco Polo Bar & Grill", hood: "Georgetown" },
+    { name: "Jules Maes Saloon", hood: "Georgetown", price: "$$" },
+    { name: "Marco Polo Bar & Grill", hood: "Georgetown", price: "$$" },
     // Wallingford
-    { name: "Leny's Place", hood: "Wallingford" },
+    { name: "Leny's Place", hood: "Wallingford", price: "$" },
     // Eastlake
-    { name: "Eastlake Zoo Tavern", hood: "Eastlake" },
+    { name: "Eastlake Zoo Tavern", hood: "Eastlake", price: "$" },
     // Pioneer Square
-    { name: "Central Saloon", hood: "Pioneer Square" },
+    { name: "Central Saloon", hood: "Pioneer Square", price: "$" },
     // West Seattle
-    { name: "Poggie Tavern", hood: "West Seattle" },
+    { name: "Poggie Tavern", hood: "West Seattle", price: "$$" },
     // South Park
-    { name: "Loretta's Northwesterner", hood: "South Park" },
+    { name: "Loretta's Northwesterner", hood: "South Park", price: "$" },
     // Madison Park
-    { name: "Red Onion Tavern", hood: "Madison Park" },
+    { name: "Red Onion Tavern", hood: "Madison Park", price: "$$" },
     // Ravenna/Roosevelt
-    { name: "The Duchess Tavern", hood: "Ravenna/Roosevelt" }
+    { name: "The Duchess Tavern", hood: "Ravenna/Roosevelt", price: "$$" }
   ];
 
   // Cocktail Mode — straightforward cocktail-bar language, and its own
@@ -1134,30 +1146,30 @@
   // the entrance isn't separately listed on Google Maps.
   const speakeasyVenues = [
     // Capitol Hill
-    { name: "Canon", hood: "Capitol Hill" },
-    { name: "Liberty", hood: "Capitol Hill" },
-    { name: "Bait Shop", hood: "Capitol Hill" },
-    { name: "The Doctor's Office", hood: "Capitol Hill" },
-    { name: "Herb & Bitter Public House", hood: "Capitol Hill" },
-    { name: "Rumba", hood: "Capitol Hill" },
-    { name: "Inside Passage", hood: "Capitol Hill" },
-    { name: "Needle & Thread", hood: "Capitol Hill", mapName: "Tavern Law" },
+    { name: "Canon", hood: "Capitol Hill", price: "$$$" },
+    { name: "Liberty", hood: "Capitol Hill", price: "$$" },
+    { name: "Bait Shop", hood: "Capitol Hill", price: "$$" },
+    { name: "The Doctor's Office", hood: "Capitol Hill", price: "$$" },
+    { name: "Herb & Bitter Public House", hood: "Capitol Hill", price: "$$" },
+    { name: "Rumba", hood: "Capitol Hill", price: "$$" },
+    { name: "Inside Passage", hood: "Capitol Hill", price: "$$$" },
+    { name: "Needle & Thread", hood: "Capitol Hill", mapName: "Tavern Law", price: "$$$" },
     // Ballard
-    { name: "Percy's & Co.", hood: "Ballard" },
-    { name: "Essex", hood: "Ballard" },
-    { name: "Baker's", hood: "Ballard" },
+    { name: "Percy's & Co.", hood: "Ballard", price: "$$" },
+    { name: "Essex", hood: "Ballard", price: "$$" },
+    { name: "Baker's", hood: "Ballard", price: "$$" },
     // Belltown
-    { name: "Rob Roy", hood: "Belltown" },
-    { name: "Roquette", hood: "Belltown" },
-    { name: "Bathtub Gin & Co.", hood: "Belltown" },
+    { name: "Rob Roy", hood: "Belltown", price: "$$$" },
+    { name: "Roquette", hood: "Belltown", price: "$$" },
+    { name: "Bathtub Gin & Co.", hood: "Belltown", price: "$$$" },
     // Queen Anne
-    { name: "Rich Rich", hood: "Queen Anne" },
+    { name: "Rich Rich", hood: "Queen Anne", price: "$$" },
     // Fremont
-    { name: "Stampede Cocktail Club", hood: "Fremont" },
+    { name: "Stampede Cocktail Club", hood: "Fremont", price: "$$" },
     // Greenwood
-    { name: "Dark Room", hood: "Greenwood" },
+    { name: "Dark Room", hood: "Greenwood", price: "$$" },
     // Pioneer Square
-    { name: "Dead Line", hood: "Pioneer Square" }
+    { name: "Dead Line", hood: "Pioneer Square", price: "$$" }
   ];
 
   // Upcoming Mode — real, dated Seattle-area events where you can plausibly
@@ -1304,6 +1316,21 @@
     return filtered;
   }
 
+  // Applies "Keep it cheap" ($ only) to a venue pool. Same graceful-
+  // fallback shape as applyNeighborhoodFilter — if a venue lacks a price
+  // tag for some reason, or the filter would leave nothing, don't produce
+  // a dead end. Not applied in Cocktail mode at all (see the Refine panel
+  // toggle, hidden there) or Upcoming mode (events have no price tag).
+  function applyPriceFilter(venuePool) {
+    if (!priceSensitive) return venuePool;
+    const filtered = venuePool.filter(function (v) { return v.price === '$'; });
+    if (filtered.length === 0) {
+      console.warn('Weekend Activity Ball: price filter matched nothing for this mode, ignoring it for this roll');
+      return venuePool;
+    }
+    return filtered;
+  }
+
   // Returns { text, venue } — the venue object travels alongside the answer
   // text so the caller can show its neighborhood/date and a map link for it.
   // For Upcoming mode, venue may be null if there's nothing qualifying this
@@ -1343,6 +1370,11 @@
     }
 
     if (mode !== 'upcoming') venuePool = applyNeighborhoodFilter(venuePool);
+    // "Keep it cheap" only applies where price tags exist and the toggle
+    // is actually reachable — Degenerate/Low-Key. Cocktail's toggle is
+    // hidden entirely (see updatePriceToggleVisibility) since no venue
+    // there is realistically "$"; Upcoming events have no price tag.
+    if (mode === 'degenerate' || mode === 'lowkey') venuePool = applyPriceFilter(venuePool);
 
     if (venuePool.length === 0) {
       return { text: "Nothing drink-worthy on the calendar this weekend — check back soon.", venue: null };
@@ -1701,6 +1733,7 @@
     // selection that could silently stop matching anything.
     selectedNeighborhood = null;
     renderNeighborhoodOptions();
+    updatePriceToggleVisibility();
     refreshRefineChipLabel();
   }
 
@@ -1845,6 +1878,21 @@
     return venues;
   }
 
+  const priceToggleRow = document.getElementById('priceToggleRow');
+  const cocktailPriceNote = document.getElementById('cocktailPriceNote');
+
+  // No Cocktail venue is realistically "$" (craft cocktails run $14-18
+  // citywide regardless of venue tier), so the toggle is hidden there
+  // entirely rather than offering a filter that can never match anything
+  // meaningfully different. The underlying priceSensitive value is left
+  // untouched — it just doesn't apply while Cocktail is active (see the
+  // mode guard in nextAnswer()) and reappears if the user switches back.
+  function updatePriceToggleVisibility() {
+    const isCocktail = mode === 'cocktail';
+    priceToggleRow.hidden = isCocktail;
+    cocktailPriceNote.hidden = !isCocktail;
+  }
+
   function renderNeighborhoodOptions() {
     if (!neighborhoodSelect) return;
     if (mode === 'upcoming') {
@@ -1906,7 +1954,10 @@
     const parts = [];
     if (selectedNeighborhood === '__remote__') parts.push('✨ Remote');
     else if (selectedNeighborhood) parts.push('📍 ' + selectedNeighborhood);
-    if (priceSensitive) parts.push('💰 Cheap');
+    // Don't surface a "Cheap" summary while the toggle itself is hidden
+    // (Cocktail mode) — the underlying value is preserved, just not shown
+    // or applied until the user's back in a mode where it's reachable.
+    if (priceSensitive && mode !== 'cocktail') parts.push('💰 Cheap');
     if (parts.length > 0) {
       refineChipBtn.textContent = parts.join(' · ') + ' ▾';
       refineChipBtn.classList.add('active');
@@ -1942,6 +1993,7 @@
   // shared link (either scheme) — someone opening a friend's roll wants to
   // see that result immediately, not a setup screen first.
   renderNeighborhoodOptions();
+  updatePriceToggleVisibility();
   renderSetupSummary();
   refreshRefineChipLabel();
   const arrivingViaSharedLink = new URLSearchParams(window.location.search).get('r') ||
