@@ -160,6 +160,12 @@
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    /* body is a fixed-height (100%) flex column, so any child defaults to
+       flex-shrink:1 — without this, content taller than the viewport (e.g.
+       the Refine panel expanded to show every neighborhood) squishes the
+       ball into an oval instead of letting the page scroll. The ball must
+       always stay circular regardless of how much else is on the page. */
+    flex-shrink: 0;
   }
 
   .ball {
@@ -541,6 +547,280 @@
   .rsvp-list strong {
     color: var(--amber);
   }
+  /* --- Onboarding modal (city/group/composition, shown on first load) --- */
+  .onboarding-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 3, 2, 0.82);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 100;
+  }
+  .onboarding-modal.visible { display: flex; }
+  .onboarding-modal-inner {
+    background: linear-gradient(180deg, var(--wood-1), var(--wood-3));
+    border: 1px solid rgba(245, 166, 35, 0.25);
+    border-radius: 20px;
+    padding: 24px 22px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+  }
+  .setup-heading {
+    font-family: 'Bevan', Georgia, serif;
+    font-weight: 400;
+    font-size: 1.15rem;
+    text-align: center;
+    margin: 0 0 6px;
+    color: var(--foam);
+  }
+  .setup-lead {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin: 0 0 20px;
+  }
+  .field-label {
+    font-size: 0.7rem;
+    color: var(--text-dimmer);
+    margin: 0 0 8px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .city-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(245,166,35,0.15);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 6px;
+  }
+  .city-row .city-name { font-size: 0.9rem; font-weight: 600; color: var(--foam); }
+  .city-row .change-link { font-size: 0.75rem; color: var(--amber); text-decoration: underline; cursor: pointer; }
+  .city-note {
+    font-size: 0.74rem;
+    color: var(--text-dim);
+    margin: 0 0 18px;
+    line-height: 1.4;
+  }
+  .pill-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .pill-btn {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 10px 8px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(245,166,35,0.2);
+    color: var(--text-dim);
+    cursor: pointer;
+    background: none;
+    font-family: 'Work Sans', sans-serif;
+  }
+  .pill-btn.selected {
+    background: rgba(245,166,35,0.14);
+    border-color: var(--amber-deep);
+    color: var(--foam);
+  }
+  .setup-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .btn-primary {
+    width: 100%;
+    background: linear-gradient(180deg, var(--amber), var(--amber-deep));
+    color: var(--ink);
+    border: none;
+    padding: 13px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: 'Work Sans', sans-serif;
+  }
+  .skip-link { font-size: 0.78rem; color: var(--text-dimmer); text-decoration: underline; cursor: pointer; background: none; border: none; }
+
+  /* --- Controls row: mode dropdown + Refine chip --- */
+  .controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  button.refine-chip {
+    font-family: 'Work Sans', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: none;
+    border: 1px solid rgba(245,166,35,0.25);
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  button.refine-chip:hover { color: var(--foam); }
+  button.refine-chip.active {
+    color: var(--foam);
+    background: rgba(245,166,35,0.12);
+    border-color: var(--amber-deep);
+  }
+
+  /* --- Refine panel (neighborhood + price, plus a summary of onboarding choices) --- */
+  .refine-panel {
+    text-align: left;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(245,166,35,0.18);
+    border-radius: 14px;
+    padding: 16px;
+    margin: 0 auto 18px;
+    max-width: 380px;
+  }
+  .refine-panel[hidden] { display: none; }
+  .refine-row { margin-bottom: 14px; }
+  .refine-row:last-child { margin-bottom: 0; }
+  .refine-row .field-label { margin-bottom: 8px; }
+  .refine-divider {
+    height: 1px;
+    background: rgba(245,166,35,0.12);
+    margin: 0 0 14px;
+  }
+  .setup-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .setup-chip {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(245,166,35,0.15);
+    padding: 5px 10px;
+    border-radius: 999px;
+  }
+  .setup-edit-link {
+    font-size: 0.72rem;
+    color: var(--amber);
+    text-decoration: underline;
+    cursor: pointer;
+    margin-left: auto;
+    background: none;
+    border: none;
+  }
+  .neighborhood-select {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .neighborhood-select .hood-chip {
+    font-size: 0.72rem;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(245,166,35,0.2);
+    color: var(--text-dim);
+    cursor: pointer;
+    background: none;
+    font-family: 'Work Sans', sans-serif;
+  }
+  .neighborhood-select .hood-chip.selected {
+    background: rgba(245,166,35,0.14);
+    border-color: var(--amber-deep);
+    color: var(--foam);
+  }
+  .neighborhood-select .hood-chip em { font-style: normal; color: var(--text-dimmer); font-size: 0.68rem; }
+  .neighborhood-select .hood-more-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--amber);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px dashed rgba(245,166,35,0.35);
+    background: none;
+    font-family: 'Work Sans', sans-serif;
+  }
+  .neighborhood-select .hood-overflow[hidden] { display: none; }
+  .neighborhood-select .hood-pinned {
+    font-size: 0.72rem;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px dashed rgba(245,166,35,0.35);
+    color: var(--text-dim);
+    cursor: pointer;
+    background: none;
+    font-family: 'Work Sans', sans-serif;
+  }
+  .neighborhood-select .hood-pinned.selected {
+    background: rgba(245,166,35,0.14);
+    border-color: var(--amber-deep);
+    color: var(--foam);
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .toggle-row .toggle-label { font-size: 0.85rem; font-weight: 500; color: var(--foam); }
+  .price-note {
+    font-size: 0.7rem;
+    color: var(--text-dimmer);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  .switch {
+    width: 40px; height: 22px; border-radius: 999px;
+    background: rgba(245,166,35,0.2);
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .switch.on { background: var(--amber-deep); }
+  .switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 18px; height: 18px; border-radius: 50%; background: var(--foam);
+    transition: left 0.15s ease;
+  }
+  .switch.on::after { left: 20px; }
+
+  /* --- Reroll nudge toast --- */
+  .nudge-toast {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(245,166,35,0.3);
+    border-radius: 14px;
+    padding: 14px;
+    margin: 0 auto 18px;
+    max-width: 380px;
+    text-align: left;
+  }
+  .nudge-toast[hidden] { display: none; }
+  .nudge-toast .nudge-text { font-size: 0.8rem; color: var(--foam); line-height: 1.4; }
+  .nudge-toast .nudge-actions { display: flex; align-items: center; justify-content: space-between; }
+  .nudge-refine-btn {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.75rem; font-weight: 700; color: var(--ink);
+    background: linear-gradient(180deg, var(--amber), var(--amber-deep));
+    border: none; padding: 7px 16px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  }
+  .nudge-dismiss { font-size: 0.75rem; color: var(--text-dimmer); cursor: pointer; text-decoration: underline; background: none; border: none; }
 </style>
 </head>
 <body>
@@ -548,21 +828,41 @@
   <h1>The Weekend Activity Ball</h1>
   <p class="subtitle">Can't decide what to do this weekend? Ask the Weekend Activity Ball. It always has an answer to the age old question.</p>
 
-  <div class="mode-dropdown" id="modeDropdown">
-    <button class="mode-dropdown-btn" id="modeDropdownBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="modeDropdownList">
-      <span id="modeDropdownLabel">Degenerate</span>
-      <svg class="mode-dropdown-chevron" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <ul class="mode-dropdown-list" id="modeDropdownList" role="listbox" aria-labelledby="modeDropdownLabel" hidden>
-      <li class="mode-dropdown-option active" id="modeDegenerate" role="option" aria-selected="true" data-mode="degenerate">Degenerate</li>
-      <li class="mode-dropdown-option" id="modeLowKey" role="option" aria-selected="false" data-mode="lowkey">Low-Key</li>
-      <li class="mode-dropdown-option" id="modeCocktail" role="option" aria-selected="false" data-mode="cocktail">Cocktail</li>
-      <!-- Upcoming mode paused (Sep 2026) to focus on the core three themes —
-           its data/logic is still intact below (upcomingEvents,
-           computeUpcomingPool, nextAnswer/hydrateFromUrl branches), so
-           re-enabling it later is just uncommenting this option back in. -->
-      <!-- <li class="mode-dropdown-option" id="modeUpcoming" role="option" aria-selected="false" data-mode="upcoming">Upcoming</li> -->
-    </ul>
+  <div class="controls-row" id="controlsRow">
+    <div class="mode-dropdown" id="modeDropdown">
+      <button class="mode-dropdown-btn" id="modeDropdownBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="modeDropdownList">
+        <span id="modeDropdownLabel">Degenerate</span>
+        <svg class="mode-dropdown-chevron" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <ul class="mode-dropdown-list" id="modeDropdownList" role="listbox" aria-labelledby="modeDropdownLabel" hidden>
+        <li class="mode-dropdown-option active" id="modeDegenerate" role="option" aria-selected="true" data-mode="degenerate">Degenerate</li>
+        <li class="mode-dropdown-option" id="modeLowKey" role="option" aria-selected="false" data-mode="lowkey">Low-Key</li>
+        <li class="mode-dropdown-option" id="modeCocktail" role="option" aria-selected="false" data-mode="cocktail">Cocktail</li>
+        <!-- Upcoming mode paused (Sep 2026) to focus on the core three themes —
+             its data/logic is still intact below (upcomingEvents,
+             computeUpcomingPool, nextAnswer/hydrateFromUrl branches), so
+             re-enabling it later is just uncommenting this option back in. -->
+        <!-- <li class="mode-dropdown-option" id="modeUpcoming" role="option" aria-selected="false" data-mode="upcoming">Upcoming</li> -->
+      </ul>
+    </div>
+    <button class="refine-chip" id="refineChipBtn" type="button" aria-expanded="false" aria-controls="refinePanel">⚙ Refine</button>
+  </div>
+
+  <div class="refine-panel" id="refinePanel" hidden>
+    <div class="refine-row">
+      <div class="field-label">YOUR SETUP</div>
+      <div class="setup-summary" id="setupSummary"></div>
+    </div>
+    <div class="refine-divider"></div>
+    <div class="refine-row">
+      <div class="field-label">NEIGHBORHOOD</div>
+      <div class="neighborhood-select" id="neighborhoodSelect"></div>
+    </div>
+    <div class="refine-row toggle-row">
+      <span class="toggle-label">Keep it cheap</span>
+      <div class="switch" id="priceToggle" role="switch" aria-checked="false" tabindex="0"></div>
+    </div>
+    <p class="price-note">Price data hasn't been verified per venue yet, so this doesn't filter results yet — it's just being captured for now.</p>
   </div>
 
   <div class="ball-wrap" id="ballWrap">
@@ -584,6 +884,14 @@
 
   <div class="hint" id="hint">Click or tap the 8 ball to get your weekend activity!</div>
 
+  <div class="nudge-toast" id="rerollNudge" hidden>
+    <span class="nudge-text">Rolled a few times? Want to narrow it down by neighborhood or budget?</span>
+    <div class="nudge-actions">
+      <button class="nudge-dismiss" id="nudgeDismissBtn" type="button">Not now</button>
+      <button class="nudge-refine-btn" id="nudgeRefineBtn" type="button">Refine</button>
+    </div>
+  </div>
+
   <div class="actions" id="actions">
     <button class="tap-btn" id="commitBtn" hidden>I'm In — Add to Calendar 📅</button>
     <button class="tap-btn" id="askBtn">Ask the Ball 🎱</button>
@@ -599,6 +907,41 @@
     <p class="reply-preview">"I'm in! 🍺"</p>
     <button class="share-btn" id="copyReplyBtn" type="button">Copy Reply Text</button>
     <div class="rsvp-list" id="rsvpListConfirm" hidden aria-live="polite"></div>
+  </div>
+
+  <div class="onboarding-modal" id="onboardingModal">
+    <div class="onboarding-modal-inner">
+      <div class="setup-heading">Where and who's rolling?</div>
+      <p class="setup-lead">Helps pick better bars. Skip if you just want to play.</p>
+
+      <div class="field-label">CITY</div>
+      <div class="city-row">
+        <span class="city-name">📍 Seattle, WA</span>
+        <button class="change-link" id="notInSeattleLink" type="button">Not in Seattle?</button>
+      </div>
+      <p class="city-note" id="cityNote" hidden>Weekend Activity Ball is Seattle-only for now — more cities coming soon.</p>
+
+      <div class="field-label">GROUP SIZE</div>
+      <div class="pill-grid" id="groupSizeGrid">
+        <button class="pill-btn" type="button" data-value="solo">Solo</button>
+        <button class="pill-btn" type="button" data-value="duo">Duo</button>
+        <button class="pill-btn" type="button" data-value="small">Small group</button>
+        <button class="pill-btn" type="button" data-value="crowd">Crowd</button>
+      </div>
+
+      <div class="field-label">WHO'S OUT</div>
+      <div class="pill-grid" id="groupCompGrid">
+        <button class="pill-btn" type="button" data-value="guys">Guys</button>
+        <button class="pill-btn" type="button" data-value="mixed">Mixed</button>
+        <button class="pill-btn" type="button" data-value="girls">Girls</button>
+        <button class="pill-btn" type="button" data-value="couple">Couple</button>
+      </div>
+
+      <div class="setup-actions">
+        <button class="btn-primary" id="onboardingContinueBtn" type="button">Continue</button>
+        <button class="skip-link" id="onboardingSkipLink" type="button">Skip for now</button>
+      </div>
+    </div>
   </div>
 
   <div class="share-modal" id="shareModal">
@@ -849,6 +1192,66 @@
 
   let mode = 'degenerate';
 
+  // --- Personalization state (session-only — see the onboarding modal and
+  // Refine panel below) -----------------------------------------------
+  // None of this persists across a page reload: this file is published
+  // both as a claude.ai artifact (where localStorage/sessionStorage aren't
+  // supported) and as a standalone download, and keeping both copies
+  // behaviorally identical mattered more than persistence here. Flagged as
+  // a backlog item if that trade-off ever needs revisiting.
+  let groupSize = null;          // 'solo' | 'duo' | 'small' | 'crowd' | null
+  let groupComposition = null;   // 'guys' | 'mixed' | 'girls' | 'couple' | null
+  // Composition is captured here but does NOT yet change the crew wording
+  // in the answer — the `crews` array is unchanged and still guys-coded
+  // regardless of this selection. That's real sentence-template work,
+  // intentionally scoped out of this pass (see the backlog).
+  const FIXED_CITY = 'Seattle, WA'; // hardcoded until multi-city actually ships
+  let selectedNeighborhood = null; // null = "Anywhere"; '__remote__' = the pinned "surprise me" option; otherwise a literal hood string
+  let priceSensitive = false;      // captured, but not yet wired to real filtering — no per-venue price-tier data exists yet
+  let rerollStreak = 0;
+  let nudgeDismissedThisStreak = false;
+  const REROLL_NUDGE_THRESHOLD = 3;
+
+  // Neighborhoods with this many venues or fewer count as "remote" for the
+  // pinned "Surprise me (remote)" option — a simple, data-derived stand-in
+  // for "hidden gem" rather than a hand-curated list.
+  const REMOTE_HOOD_MAX_COUNT = 1;
+
+  // Returns [{ hood, count }] for a venue pool, sorted by count descending.
+  // Upcoming-mode events don't carry a comparable `hood` field, so this is
+  // only meaningful for the three hood-based venue lists.
+  function neighborhoodCounts(venuePool) {
+    const counts = {};
+    venuePool.forEach(function (v) {
+      if (!v.hood) return;
+      counts[v.hood] = (counts[v.hood] || 0) + 1;
+    });
+    return Object.keys(counts)
+      .map(function (hood) { return { hood: hood, count: counts[hood] }; })
+      .sort(function (a, b) { return b.count - a.count; });
+  }
+
+  // Applies the current neighborhood selection to a venue pool. Falls back
+  // to the unfiltered pool if the filter would leave nothing to pick from
+  // (e.g. a neighborhood picked in one mode doesn't exist in another) —
+  // graceful degradation over a dead end.
+  function applyNeighborhoodFilter(venuePool) {
+    if (!selectedNeighborhood) return venuePool;
+    let filtered;
+    if (selectedNeighborhood === '__remote__') {
+      const counts = neighborhoodCounts(venuePool);
+      const remoteHoods = counts.filter(function (c) { return c.count <= REMOTE_HOOD_MAX_COUNT; }).map(function (c) { return c.hood; });
+      filtered = venuePool.filter(function (v) { return remoteHoods.indexOf(v.hood) !== -1; });
+    } else {
+      filtered = venuePool.filter(function (v) { return v.hood === selectedNeighborhood; });
+    }
+    if (filtered.length === 0) {
+      console.warn('Weekend Activity Ball: neighborhood filter matched nothing for this mode, ignoring it for this roll');
+      return venuePool;
+    }
+    return filtered;
+  }
+
   // Returns { text, venue } — the venue object travels alongside the answer
   // text so the caller can show its neighborhood/date and a map link for it.
   // For Upcoming mode, venue may be null if there's nothing qualifying this
@@ -865,6 +1268,8 @@
     } else {
       verbPool = verbs; amountPool = amounts; venuePool = venues;
     }
+
+    if (mode !== 'upcoming') venuePool = applyNeighborhoodFilter(venuePool);
 
     if (venuePool.length === 0) {
       return { text: "Nothing drink-worthy on the calendar this weekend — check back soon.", venue: null };
@@ -1216,6 +1621,12 @@
       o.setAttribute('aria-selected', String(isActive));
     });
     modeDropdownLabel.textContent = modeLabels[mode];
+    // Each mode has its own venue pool, so a neighborhood picked in one
+    // mode may not exist in another — reset rather than carry over a
+    // selection that could silently stop matching anything.
+    selectedNeighborhood = null;
+    renderNeighborhoodOptions();
+    refreshRefineChipLabel();
   }
 
   function openDropdown() {
@@ -1264,6 +1675,203 @@
   document.addEventListener('click', function (e) {
     if (!modeDropdown.contains(e.target) && !modeDropdownList.hidden) closeDropdown(false);
   });
+
+  // --- Onboarding modal (city / group size / composition) ---------------
+  const onboardingModal = document.getElementById('onboardingModal');
+  const notInSeattleLink = document.getElementById('notInSeattleLink');
+  const cityNote = document.getElementById('cityNote');
+  const groupSizeGrid = document.getElementById('groupSizeGrid');
+  const groupCompGrid = document.getElementById('groupCompGrid');
+  const onboardingContinueBtn = document.getElementById('onboardingContinueBtn');
+  const onboardingSkipLink = document.getElementById('onboardingSkipLink');
+
+  function openOnboarding() {
+    onboardingModal.classList.add('visible');
+  }
+  function closeOnboarding() {
+    onboardingModal.classList.remove('visible');
+  }
+
+  notInSeattleLink.addEventListener('click', function () {
+    // Only Seattle exists today — an honest answer rather than a picker
+    // with nowhere to go. Becomes a real city switcher once multi-city
+    // support actually ships.
+    cityNote.hidden = false;
+  });
+
+  function wirePillGrid(grid, onSelect) {
+    Array.from(grid.querySelectorAll('.pill-btn')).forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const alreadySelected = btn.classList.contains('selected');
+        Array.from(grid.querySelectorAll('.pill-btn')).forEach(function (b) { b.classList.remove('selected'); });
+        if (!alreadySelected) {
+          btn.classList.add('selected');
+          onSelect(btn.dataset.value);
+        } else {
+          onSelect(null); // tapping the selected pill again clears it
+        }
+      });
+    });
+  }
+  wirePillGrid(groupSizeGrid, function (value) { groupSize = value; });
+  wirePillGrid(groupCompGrid, function (value) { groupComposition = value; });
+
+  onboardingContinueBtn.addEventListener('click', function () {
+    closeOnboarding();
+    renderSetupSummary();
+    refreshRefineChipLabel();
+  });
+  onboardingSkipLink.addEventListener('click', function () {
+    // Skip leaves groupSize/groupComposition at null — today's exact
+    // experience, nothing assumed.
+    closeOnboarding();
+    renderSetupSummary();
+  });
+
+  const setupSizeLabels = { solo: 'Solo', duo: 'Duo', small: 'Small group', crowd: 'Crowd' };
+  const setupCompLabels = { guys: 'Guys', mixed: 'Mixed', girls: 'Girls', couple: 'Couple' };
+
+  function renderSetupSummary() {
+    const setupSummary = document.getElementById('setupSummary');
+    if (!setupSummary) return;
+    const chips = ['<span class="setup-chip">📍 ' + FIXED_CITY.replace(', WA', '') + '</span>'];
+    chips.push('<span class="setup-chip">' + (groupSize ? setupSizeLabels[groupSize] : 'Group size not set') + '</span>');
+    chips.push('<span class="setup-chip">' + (groupComposition ? setupCompLabels[groupComposition] : 'Who\'s out not set') + '</span>');
+    chips.push('<button class="setup-edit-link" type="button" id="setupEditLink">Edit</button>');
+    setupSummary.innerHTML = chips.join('');
+    const editLink = document.getElementById('setupEditLink');
+    if (editLink) editLink.addEventListener('click', openOnboarding);
+  }
+
+  // --- Refine panel (neighborhood + price) -------------------------------
+  const refineChipBtn = document.getElementById('refineChipBtn');
+  const refinePanel = document.getElementById('refinePanel');
+  const neighborhoodSelect = document.getElementById('neighborhoodSelect');
+  const priceToggle = document.getElementById('priceToggle');
+  const NEIGHBORHOOD_VISIBLE_CAP = 5;
+
+  refineChipBtn.addEventListener('click', function () {
+    const isHidden = refinePanel.hidden;
+    refinePanel.hidden = !isHidden;
+    refineChipBtn.setAttribute('aria-expanded', String(isHidden));
+    if (isHidden) {
+      // Opening Refine to actually adjust something is the same "this
+      // pool isn't working" signal a share/commit is — reset the nudge.
+      rerollStreak = 0;
+      nudgeDismissedThisStreak = false;
+      hideNudge();
+    }
+  });
+
+  function currentModeVenuePool() {
+    if (mode === 'lowkey') return venues;
+    if (mode === 'cocktail') return speakeasyVenues;
+    if (mode === 'upcoming') return [];
+    return venues;
+  }
+
+  function renderNeighborhoodOptions() {
+    if (!neighborhoodSelect) return;
+    if (mode === 'upcoming') {
+      neighborhoodSelect.innerHTML = '<span class="hood-chip selected">Not available in Upcoming mode</span>';
+      return;
+    }
+    const counts = neighborhoodCounts(currentModeVenuePool());
+    const visible = counts.slice(0, NEIGHBORHOOD_VISIBLE_CAP);
+    const overflow = counts.slice(NEIGHBORHOOD_VISIBLE_CAP);
+
+    function chipHtml(hood, count, extraClass) {
+      const isSelected = selectedNeighborhood === hood;
+      return '<button class="hood-chip' + (extraClass ? ' ' + extraClass : '') + (isSelected ? ' selected' : '') +
+        '" type="button" data-hood="' + hood.replace(/"/g, '&quot;') + '">' + hood + ' <em>(' + count + ')</em></button>';
+    }
+
+    let html = '<button class="hood-chip' + (selectedNeighborhood === null ? ' selected' : '') + '" type="button" data-hood="">Anywhere</button>';
+    visible.forEach(function (c) { html += chipHtml(c.hood, c.count); });
+    if (overflow.length > 0) {
+      html += '<button class="hood-more-label" type="button" id="hoodMoreBtn">+' + overflow.length + ' more ▾</button>';
+      overflow.forEach(function (c) { html += chipHtml(c.hood, c.count, 'hood-overflow'); });
+    }
+    html += '<button class="hood-pinned' + (selectedNeighborhood === '__remote__' ? ' selected' : '') + '" type="button" data-hood="__remote__">Surprise me (remote) ✨</button>';
+    neighborhoodSelect.innerHTML = html;
+
+    // Overflow chips stay hidden until "+N more" is tapped.
+    Array.from(neighborhoodSelect.querySelectorAll('.hood-overflow')).forEach(function (el) { el.hidden = true; });
+    const moreBtn = document.getElementById('hoodMoreBtn');
+    if (moreBtn) {
+      moreBtn.addEventListener('click', function () {
+        const expanded = moreBtn.dataset.expanded === 'true';
+        moreBtn.dataset.expanded = String(!expanded);
+        moreBtn.textContent = expanded ? ('+' + overflow.length + ' more ▾') : 'Show less ▲';
+        Array.from(neighborhoodSelect.querySelectorAll('.hood-overflow')).forEach(function (el) { el.hidden = expanded; });
+      });
+    }
+
+    Array.from(neighborhoodSelect.querySelectorAll('[data-hood]')).forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        const value = chip.dataset.hood;
+        selectedNeighborhood = value === '' ? null : value;
+        renderNeighborhoodOptions();
+        refreshRefineChipLabel();
+      });
+    });
+  }
+
+  priceToggle.addEventListener('click', function () {
+    priceSensitive = !priceSensitive;
+    priceToggle.classList.toggle('on', priceSensitive);
+    priceToggle.setAttribute('aria-checked', String(priceSensitive));
+    refreshRefineChipLabel();
+  });
+  priceToggle.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); priceToggle.click(); }
+  });
+
+  function refreshRefineChipLabel() {
+    const parts = [];
+    if (selectedNeighborhood === '__remote__') parts.push('✨ Remote');
+    else if (selectedNeighborhood) parts.push('📍 ' + selectedNeighborhood);
+    if (priceSensitive) parts.push('💰 Cheap');
+    if (parts.length > 0) {
+      refineChipBtn.textContent = parts.join(' · ') + ' ▾';
+      refineChipBtn.classList.add('active');
+    } else {
+      refineChipBtn.textContent = '⚙ Refine';
+      refineChipBtn.classList.remove('active');
+    }
+  }
+
+  // --- Reroll nudge --------------------------------------------------
+  const rerollNudge = document.getElementById('rerollNudge');
+  const nudgeDismissBtn = document.getElementById('nudgeDismissBtn');
+  const nudgeRefineBtn = document.getElementById('nudgeRefineBtn');
+
+  function hideNudge() { rerollNudge.hidden = true; }
+  function maybeShowNudge() {
+    if (nudgeDismissedThisStreak) return;
+    if (rerollStreak >= REROLL_NUDGE_THRESHOLD) rerollNudge.hidden = false;
+  }
+  nudgeDismissBtn.addEventListener('click', function () {
+    nudgeDismissedThisStreak = true;
+    hideNudge();
+  });
+  nudgeRefineBtn.addEventListener('click', function () {
+    hideNudge();
+    rerollStreak = 0;
+    nudgeDismissedThisStreak = false;
+    refinePanel.hidden = false;
+    refineChipBtn.setAttribute('aria-expanded', 'true');
+  });
+
+  // Initial render + first-visit onboarding. Skipped when arriving via a
+  // shared link (either scheme) — someone opening a friend's roll wants to
+  // see that result immediately, not a setup screen first.
+  renderNeighborhoodOptions();
+  renderSetupSummary();
+  refreshRefineChipLabel();
+  const arrivingViaSharedLink = new URLSearchParams(window.location.search).get('r') ||
+    new URLSearchParams(window.location.search).get('m');
+  if (!arrivingViaSharedLink) openOnboarding();
 
   for (let i = 0; i < 10; i++) {
     const b = document.createElement('div');
@@ -1583,6 +2191,12 @@
     if (shareBusy) return;
     if (!shareBlob) return; // button should be disabled in this case, but be safe
 
+    // Sharing is a real "found what I wanted" signal — same as opening
+    // Refine directly (see refineChipBtn's click handler above).
+    rerollStreak = 0;
+    nudgeDismissedThisStreak = false;
+    hideNudge();
+
     shareBusy = true;
     const originalLabel = shareBtn.textContent;
     shareBtn.disabled = true;
@@ -1745,6 +2359,9 @@
   commitBtn.addEventListener('click', async function () {
     if (!currentCalendarInfo) return;
     downloadIcs(buildIcsBlob(currentCalendarInfo));
+    rerollStreak = 0;
+    nudgeDismissedThisStreak = false;
+    hideNudge();
 
     // Named RSVP: ask once, in-memory only for this page load — not saved
     // to localStorage/sessionStorage, since this file is also published as
@@ -1802,6 +2419,8 @@
     if (rollWriteTimer) { clearTimeout(rollWriteTimer); rollWriteTimer = null; }
     currentRollId = null;
     renderRsvpList([]);
+    rerollStreak++;
+    hideNudge();
 
     ball.classList.remove('shaking');
     void ball.offsetWidth;
@@ -1822,6 +2441,7 @@
         // "tap again" copy competing with it for the same space.
         hint.style.display = 'none';
         hint.textContent = '';
+        maybeShowNudge();
         const hoodText = hoodDisplayText(result.venue);
         venueHood.textContent = hoodText ? hoodText + ' · ' : '';
         venueMapLink.href = venueMapUrl(result.venue);
@@ -1830,12 +2450,11 @@
         // wait on a network round trip just to enable the button. The
         // Firestore doc that upgrades this into a LIVE-tracking link is
         // only written after ROLL_WRITE_DEBOUNCE_MS of the ball sitting
-        // still on this result — so someone rolling through 20 options
-        // before picking one writes zero throwaway docs for the 19 they
-        // passed on, only the one they actually paused on. If Share gets
-        // tapped inside that debounce window, the recipient gets a working
-        // link that just won't carry a live RSVP list — a fine trade for
-        // not writing to the database on every single tap of the ball.
+        // still on this result — so someone rolling through several
+        // options before picking one writes fewer throwaway docs than
+        // writing on every tap. If Share gets tapped inside that debounce
+        // window, the recipient gets a working link that just won't carry
+        // a live RSVP list.
         currentRollId = null;
         renderRsvpList([]);
         prepareShareImage(result.text, buildShareUrlLegacy(result.venue, result.verb, result.amount, result.crew));
