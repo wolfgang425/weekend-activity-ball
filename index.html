@@ -1093,6 +1093,11 @@
   // unique) without needing anything beyond the venue name + mode later.
   // Returns the new doc's ID, or throws if Firestore can't be reached —
   // callers fall back to buildShareUrlLegacy in that case.
+  //
+  // No expiration field on these docs — Firestore's native TTL policy
+  // feature turned out to require a linked Blaze billing account just to
+  // configure (a management-plane gate, not an actual usage cost), which
+  // was an explicit no-go. See the backlog for the parked cleanup options.
   async function createRollDoc(result, currentMode) {
     const payload = {
       mode: currentMode,
@@ -1684,6 +1689,11 @@
   // a fresh roll has finished.
   let currentRollId = null;
 
+  // Pending debounced write for the current roll (see the reveal branch in
+  // ask()) — cleared whenever a newer roll supersedes it before it fires.
+  let rollWriteTimer = null;
+  const ROLL_WRITE_DEBOUNCE_MS = 1200;
+
   function setCalendarLinkHref(info) {
     if (calendarObjectUrl) { URL.revokeObjectURL(calendarObjectUrl); calendarObjectUrl = null; }
     if (!info) {
@@ -1789,6 +1799,7 @@
     windowText.classList.add('placeholder');
     windowText.textContent = '...';
     if (unsubscribeRsvp) { unsubscribeRsvp(); unsubscribeRsvp = null; }
+    if (rollWriteTimer) { clearTimeout(rollWriteTimer); rollWriteTimer = null; }
     currentRollId = null;
     renderRsvpList([]);
 
@@ -1815,27 +1826,33 @@
         venueHood.textContent = hoodText ? hoodText + ' · ' : '';
         venueMapLink.href = venueMapUrl(result.venue);
         venueMeta.classList.add('visible');
-        showOwnRollActions();
-        setPrimaryCta('share');
-        currentCalendarInfo = buildCalendarInfo(result.venue, result.text);
-        setCalendarLinkHref(currentCalendarInfo);
-
-        // Write this roll to Firestore so its share link carries a live
-        // "who's in" list. Share stays disabled (see prepareShareImage)
-        // until whichever link — Firestore-backed or legacy fallback —
-        // is ready, so a tap never goes out with a stale link.
+        // Share works immediately off a plain (non-live) link — no need to
+        // wait on a network round trip just to enable the button. The
+        // Firestore doc that upgrades this into a LIVE-tracking link is
+        // only written after ROLL_WRITE_DEBOUNCE_MS of the ball sitting
+        // still on this result — so someone rolling through 20 options
+        // before picking one writes zero throwaway docs for the 19 they
+        // passed on, only the one they actually paused on. If Share gets
+        // tapped inside that debounce window, the recipient gets a working
+        // link that just won't carry a live RSVP list — a fine trade for
+        // not writing to the database on every single tap of the ball.
         currentRollId = null;
         renderRsvpList([]);
+        prepareShareImage(result.text, buildShareUrlLegacy(result.venue, result.verb, result.amount, result.crew));
+
+        if (rollWriteTimer) clearTimeout(rollWriteTimer);
         const capturedResult = result, capturedMode = mode;
-        createRollDoc(capturedResult, capturedMode).then(function (rollId) {
-          if (mode !== capturedMode || windowText.textContent !== capturedResult.text) return; // superseded by a newer roll
-          currentRollId = rollId;
-          prepareShareImage(capturedResult.text, buildShareUrl(rollId));
-          subscribeToRoll(rollId);
-        }).catch(function (e) {
-          console.error('Weekend Activity Ball: could not create a live roll doc, falling back to a static link', e);
-          prepareShareImage(capturedResult.text, buildShareUrlLegacy(capturedResult.venue, capturedResult.verb, capturedResult.amount, capturedResult.crew));
-        });
+        rollWriteTimer = setTimeout(function () {
+          rollWriteTimer = null;
+          createRollDoc(capturedResult, capturedMode).then(function (rollId) {
+            if (mode !== capturedMode || windowText.textContent !== capturedResult.text) return; // superseded by a newer roll
+            currentRollId = rollId;
+            prepareShareImage(capturedResult.text, buildShareUrl(rollId));
+            subscribeToRoll(rollId);
+          }).catch(function (e) {
+            console.error('Weekend Activity Ball: could not create a live roll doc, sticking with the static link', e);
+          });
+        }, ROLL_WRITE_DEBOUNCE_MS);
       } else {
         // Upcoming mode came up empty (e.g. pool changed mid-session) — no
         // venue to show or share, so this is the one case that still needs
