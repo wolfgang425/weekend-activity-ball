@@ -1004,6 +1004,59 @@
 
   const crews = ["the absolute boys", "the boys", "the squad", "the gang", "the crew", "the fellas", "the guys"];
 
+  // --- Companion-clause word pools (crew-wording-draft.md) ---------------
+  // groupComposition/groupSize are captured in the onboarding modal but,
+  // until now, didn't change the answer at all. Size mostly decides the
+  // SENTENCE STRUCTURE (solo drops the clause; duo gets a lighter one-
+  // person phrase; small group keeps the existing "with the ___" template;
+  // crowd uses the same template but bigger-sounding words), and
+  // composition picks the WORD FAMILY within whichever structure size
+  // selects. `crews` above stays the default/fallback pool — used whenever
+  // composition is 'guys' or simply not set, which is also what a skipped
+  // onboarding falls back to (today's exact experience).
+  const girlsCrewPool = ["the girls", "the girlies", "the squad", "the gang", "the crew"];
+  const mixedCrewPool = ["the crew", "the gang", "the squad", "the group"];
+
+  // Crowd gets its own bigger-sounding variant rather than sharing Small
+  // group's pool verbatim — layered on top, not a replacement.
+  const crowdGuysPool = ["the whole crew", "everybody", "the whole squad"];
+  const crowdGirlsPool = ["the whole crew", "everybody", "the whole squad"];
+  const crowdMixedPool = ["the whole crew", "everybody", "the whole group"];
+
+  const guysDuoPool = ["your boy", "your right-hand man"];
+  const girlsDuoPool = ["your girl", "your ride-or-die"];
+  const mixedDuoPool = ["your +1", "your partner in crime"];
+  const couplePool = ["your date", "your plus-one", "your other half"];
+
+  // Returns just the bare companion word/phrase (e.g. "the boys", "your
+  // date"), or '' for solo. Deliberately NOT a full " with X" clause —
+  // this needs to slot into the same `crew` variable/URL param that
+  // legacy share links already use, so old links (which always had a
+  // non-empty word here) keep reconstructing correctly, and only new
+  // solo rolls introduce the empty-string case.
+  function pickCompanionWord() {
+    if (groupSize === 'solo') return '';
+    // Couple overrides whatever composition-by-size would otherwise pick,
+    // regardless of the size selected — a couple stays a couple even if
+    // someone also picked "Crowd" (kept independent per explicit decision,
+    // rather than forcing Couple to imply Duo).
+    if (groupComposition === 'couple') return pick(couplePool);
+    if (groupSize === 'duo') {
+      if (groupComposition === 'guys') return pick(guysDuoPool);
+      if (groupComposition === 'girls') return pick(girlsDuoPool);
+      return pick(mixedDuoPool); // mixed, or composition not set
+    }
+    if (groupSize === 'crowd') {
+      if (groupComposition === 'girls') return pick(crowdGirlsPool);
+      if (groupComposition === 'mixed') return pick(crowdMixedPool);
+      return pick(crowdGuysPool); // guys, or composition not set
+    }
+    // Small group / size not set — the original template.
+    if (groupComposition === 'girls') return pick(girlsCrewPool);
+    if (groupComposition === 'mixed') return pick(mixedCrewPool);
+    return pick(crews); // guys, or composition not set
+  }
+
   // Low-Key Mode — same venues and crews, but a tamer verb/amount pool for
   // when a full "Degenerate" night out isn't what's called for.
   const lowKeyVerbs = ["Sip", "Have", "Grab", "Nurse", "Enjoy", "Savor", "Order"];
@@ -1201,10 +1254,9 @@
   // a backlog item if that trade-off ever needs revisiting.
   let groupSize = null;          // 'solo' | 'duo' | 'small' | 'crowd' | null
   let groupComposition = null;   // 'guys' | 'mixed' | 'girls' | 'couple' | null
-  // Composition is captured here but does NOT yet change the crew wording
-  // in the answer — the `crews` array is unchanged and still guys-coded
-  // regardless of this selection. That's real sentence-template work,
-  // intentionally scoped out of this pass (see the backlog).
+  // Both now feed buildCompanionClause() below, which replaces the old
+  // fixed " with " + pick(crews) tail — see crew-wording-draft.md for the
+  // design (size picks sentence structure, composition picks word family).
   const FIXED_CITY = 'Seattle, WA'; // hardcoded until multi-city actually ships
   let selectedNeighborhood = null; // null = "Anywhere"; '__remote__' = the pinned "surprise me" option; otherwise a literal hood string
   let priceSensitive = false;      // captured, but not yet wired to real filtering — no per-venue price-tier data exists yet
@@ -1269,6 +1321,27 @@
       verbPool = verbs; amountPool = amounts; venuePool = venues;
     }
 
+    // A solo roll quietly borrows Low-Key's tamer amounts on Degenerate/
+    // Upcoming specifically — "an ungodly number of beers" recommended to
+    // one person alone reads differently than the same line aimed at a
+    // group. Low-Key mode is already tame, and Cocktail mode's amounts
+    // are already modest, so neither needs (or should get) this swap —
+    // forcing beer-language onto Cocktail's speakeasy venues would just
+    // produce nonsense ("a beer" at a martini bar).
+    if (groupSize === 'solo' && (mode === 'degenerate' || mode === 'upcoming')) {
+      verbPool = lowKeyVerbs; amountPool = lowKeyAmounts;
+    }
+
+    // "A round of X" is a genuine grammatical mismatch for a solo roll —
+    // you can't buy yourself a round — not just a hyperbole question like
+    // the beer/pitcher quantities elsewhere, so this is excluded
+    // regardless of tone. Scoped to Cocktail mode since it's the only pool
+    // with "round of" phrasing today.
+    if (mode === 'cocktail' && groupSize === 'solo') {
+      const soloFriendly = amountPool.filter(function (a) { return a.indexOf('a round of') === -1; });
+      if (soloFriendly.length > 0) amountPool = soloFriendly;
+    }
+
     if (mode !== 'upcoming') venuePool = applyNeighborhoodFilter(venuePool);
 
     if (venuePool.length === 0) {
@@ -1282,13 +1355,15 @@
       venue = pick(venuePool);
       verb = pick(verbPool);
       amount = pick(amountPool);
-      crew = pick(crews);
-      text = verb + ' ' + amount + ' at ' + venue.name + ' with ' + crew + '.';
+      crew = pickCompanionWord();
+      text = verb + ' ' + amount + ' at ' + venue.name + (crew ? ' with ' + crew : '') + '.';
       attempts++;
-    } while (text === lastAnswer && attempts < 6 && (venuePool.length * amountPool.length * crews.length > 1));
+    } while (text === lastAnswer && attempts < 6);
     lastAnswer = text;
     // verb/amount/crew travel alongside text/venue so a deep link can encode
     // exactly this roll and reproduce it verbatim later (see buildShareUrl).
+    // crew may be '' for a solo roll — buildShareUrlLegacy/hydrateFromUrlLegacy
+    // both handle that as "no companion clause" rather than a broken " with ."
     return { text: text, venue: venue, verb: verb, amount: amount, crew: crew };
   }
 
@@ -2607,7 +2682,9 @@
     const a = params.get('a');
     const c = params.get('c');
     const vn = params.get('vn');
-    if (!m || !v || !a || !c || !vn || !modeLabels[m]) return;
+    // c can legitimately be '' for a solo roll (no companion clause) — only
+    // bail out if it's actually absent (null), not just empty.
+    if (!m || !v || !a || c === null || !vn || !modeLabels[m]) return;
 
     let venuePool;
     if (m === 'lowkey') venuePool = venues;
@@ -2634,7 +2711,10 @@
     });
     modeDropdownLabel.textContent = modeLabels[mode];
 
-    const text = v + ' ' + a + ' at ' + vn + ' with ' + c + '.';
+    // c may be empty for a solo roll (no companion clause) — old links
+    // always had a non-empty word here, so this only matters for links
+    // generated after composition/size wordng shipped.
+    const text = v + ' ' + a + ' at ' + vn + (c ? ' with ' + c : '') + '.';
     windowText.classList.remove('placeholder');
     windowText.textContent = text;
     windowText.classList.add('visible');
