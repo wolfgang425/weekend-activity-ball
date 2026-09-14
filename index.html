@@ -65,7 +65,6 @@
 
   .mode-dropdown {
     position: relative;
-    margin-bottom: 22px;
   }
 
   button.mode-dropdown-btn {
@@ -172,13 +171,18 @@
     width: 100%;
     height: 100%;
     border-radius: 50%;
+    /* A true black glossy shell — real color/luminance contrast against
+       the warm brown wood background, rather than the previous brown-
+       toned gradient (which was too close to the background's own hue)
+       or a glow effect layered on top. */
     background:
-      radial-gradient(circle at 32% 28%, #4a3320 0%, #241a10 38%, #0f0a06 75%, #050302 100%);
+      radial-gradient(circle at 32% 28%, #4a4a4a 0%, #1c1c1c 32%, #0a0a0a 65%, #000000 100%);
     box-shadow:
-      0 18px 40px rgba(0,0,0,0.55),
-      inset 0 -10px 30px rgba(0,0,0,0.6),
-      inset 0 10px 22px rgba(255,255,255,0.06);
+      0 18px 44px rgba(0,0,0,0.7),
+      inset 0 -10px 30px rgba(0,0,0,0.7),
+      inset 0 10px 22px rgba(255,255,255,0.08);
     position: relative;
+    z-index: 1;
     transform-origin: 50% 90%;
     transition: transform 0.05s;
   }
@@ -600,7 +604,16 @@
     margin-bottom: 6px;
   }
   .city-row .city-name { font-size: 0.9rem; font-weight: 600; color: var(--foam); }
-  .city-row .change-link { font-size: 0.75rem; color: var(--amber); text-decoration: underline; cursor: pointer; }
+  .city-row .change-link {
+    font-size: 0.75rem;
+    color: var(--amber);
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: 'Work Sans', sans-serif;
+  }
   .city-note {
     font-size: 0.74rem;
     color: var(--text-dim);
@@ -679,6 +692,13 @@
     color: var(--foam);
     background: rgba(245,166,35,0.12);
     border-color: var(--amber-deep);
+  }
+  .refine-chevron {
+    transition: transform 0.15s ease;
+    flex-shrink: 0;
+  }
+  button.refine-chip[aria-expanded="true"] .refine-chevron {
+    transform: rotate(180deg);
   }
 
   /* --- Refine panel (neighborhood + price, plus a summary of onboarding choices) --- */
@@ -852,7 +872,10 @@
         <!-- <li class="mode-dropdown-option" id="modeUpcoming" role="option" aria-selected="false" data-mode="upcoming">Upcoming</li> -->
       </ul>
     </div>
-    <button class="refine-chip" id="refineChipBtn" type="button" aria-expanded="false" aria-controls="refinePanel">⚙ Refine</button>
+    <button class="refine-chip" id="refineChipBtn" type="button" aria-expanded="false" aria-controls="refinePanel">
+      <span id="refineChipLabel">⚙ Refine</span>
+      <svg class="refine-chevron" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
 
   <div class="refine-panel" id="refinePanel" hidden>
@@ -928,12 +951,12 @@
       </div>
       <p class="city-note" id="cityNote" hidden>Weekend Activity Ball is Seattle-only for now — more cities coming soon.</p>
 
-      <div class="field-label">GROUP SIZE</div>
+      <div class="field-label">HOW MANY OF YOU?</div>
       <div class="pill-grid" id="groupSizeGrid">
-        <button class="pill-btn" type="button" data-value="solo">Solo</button>
-        <button class="pill-btn" type="button" data-value="duo">Duo</button>
-        <button class="pill-btn" type="button" data-value="small">Small group</button>
-        <button class="pill-btn" type="button" data-value="crowd">Crowd</button>
+        <button class="pill-btn" type="button" data-value="solo">Just me</button>
+        <button class="pill-btn" type="button" data-value="duo">Me + 1</button>
+        <button class="pill-btn" type="button" data-value="small">A few of us</button>
+        <button class="pill-btn" type="button" data-value="crowd">The whole gang</button>
       </div>
 
       <div class="field-label">WHO'S OUT</div>
@@ -1851,7 +1874,7 @@
     renderSetupSummary();
   });
 
-  const setupSizeLabels = { solo: 'Solo', duo: 'Duo', small: 'Small group', crowd: 'Crowd' };
+  const setupSizeLabels = { solo: 'Just me', duo: 'Me + 1', small: 'A few of us', crowd: 'The whole gang' };
   const setupCompLabels = { guys: 'Guys', mixed: 'Mixed', girls: 'Girls', couple: 'Couple' };
 
   function renderSetupSummary() {
@@ -1965,6 +1988,8 @@
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); priceToggle.click(); }
   });
 
+  const refineChipLabel = document.getElementById('refineChipLabel');
+
   function refreshRefineChipLabel() {
     const parts = [];
     if (selectedNeighborhood === '__remote__') parts.push('✨ Remote');
@@ -1974,10 +1999,10 @@
     // or applied until the user's back in a mode where it's reachable.
     if (priceSensitive && mode !== 'cocktail') parts.push('💰 Cheap');
     if (parts.length > 0) {
-      refineChipBtn.textContent = parts.join(' · ') + ' ▾';
+      refineChipLabel.textContent = parts.join(' · ');
       refineChipBtn.classList.add('active');
     } else {
-      refineChipBtn.textContent = '⚙ Refine';
+      refineChipLabel.textContent = '⚙ Refine';
       refineChipBtn.classList.remove('active');
     }
   }
@@ -2174,7 +2199,7 @@
     ctx.shadowColor = 'rgba(0,0,0,0.55)';
     ctx.shadowBlur = 60;
     ctx.shadowOffsetY = 18;
-    ctx.fillStyle = '#0f0a06';
+    ctx.fillStyle = '#0a0a0a';
     ctx.fill();
     ctx.restore();
 
@@ -2187,10 +2212,10 @@
       ballLeft + 0.32 * (ballR * 2), ballTop + 0.28 * (ballR * 2), 0,
       ballLeft + 0.32 * (ballR * 2), ballTop + 0.28 * (ballR * 2), 502
     );
-    ballGrad.addColorStop(0, '#4a3320');
-    ballGrad.addColorStop(0.38, '#241a10');
-    ballGrad.addColorStop(0.75, '#0f0a06');
-    ballGrad.addColorStop(1, '#050302');
+    ballGrad.addColorStop(0, '#4a4a4a');
+    ballGrad.addColorStop(0.32, '#1c1c1c');
+    ballGrad.addColorStop(0.65, '#0a0a0a');
+    ballGrad.addColorStop(1, '#000000');
     ctx.fillStyle = ballGrad;
     ctx.fillRect(ballLeft, ballTop, ballR * 2, ballR * 2);
     ctx.restore();
