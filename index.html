@@ -288,6 +288,17 @@
     display: flex;
   }
 
+  .venue-why {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    text-align: center;
+    max-width: 340px;
+    margin: 0 auto 14px;
+    line-height: 1.5;
+  }
+
+  .venue-why[hidden] { display: none; }
+
   a.venue-map-link {
     color: var(--amber);
     font-weight: 600;
@@ -912,6 +923,8 @@
     <a class="venue-map-link" id="venueCalendarLink" href="#">Add to Calendar</a>
   </div>
 
+  <p class="venue-why" id="venueWhy" hidden></p>
+
   <div class="hint" id="hint">Click or tap the 8 ball to get your weekend activity!</div>
 
   <div class="nudge-toast" id="rerollNudge" hidden>
@@ -1107,64 +1120,64 @@
   // itself a best-effort guess. Powers the "Keep it cheap" Refine toggle.
   const venues = [
     // Capitol Hill
-    { name: "The Comet Tavern", hood: "Capitol Hill", price: "$" },
-    { name: "Linda's Tavern", hood: "Capitol Hill", price: "$" },
-    { name: "Captain Black's", hood: "Capitol Hill", price: "$" },
-    { name: "The Pine Box", hood: "Capitol Hill", price: "$$" },
-    { name: "Rhein Haus", hood: "Capitol Hill", price: "$$" },
-    { name: "Crescent Lounge", hood: "Capitol Hill", price: "$" },
+    { name: "The Comet Tavern", hood: "Capitol Hill", price: "$", vibe: "A gritty Capitol Hill dive with stiff pours and cheap canned beer — no frills, all character." },
+    { name: "Linda's Tavern", hood: "Capitol Hill", price: "$", vibe: "Capitol Hill's cowboy-themed institution, taxidermy on the walls and a killer back patio — a tallboy of Rainier is the traditional order." },
+    { name: "Captain Black's", hood: "Capitol Hill", price: "$", vibe: "A low-key Capitol Hill dive for cheap drinks and zero pretension." },
+    { name: "The Pine Box", hood: "Capitol Hill", price: "$$", vibe: "A converted mortuary with a huge beer and cocktail list — yes, there's an open standing coffin between the bathrooms." },
+    { name: "Rhein Haus", hood: "Capitol Hill", price: "$$", vibe: "A sprawling German beer hall with bocce courts, house-made sausages, and a serious draft list." },
+    { name: "Crescent Lounge", hood: "Capitol Hill", price: "$", vibe: "A beloved dive with some of the best karaoke on Capitol Hill and a colorful cast of regulars." },
     // Ballard
-    { name: "King's Hardware", hood: "Ballard", price: "$" },
-    { name: "George & Dragon Pub", hood: "Ballard", price: "$$" },
-    { name: "Hattie's Hat", hood: "Ballard", price: "$$" },
-    { name: "Sloop Tavern", hood: "Ballard", price: "$" },
-    { name: "Ballard Smoke Shop", hood: "Ballard", price: "$" },
-    { name: "Sunset Tavern", hood: "Ballard", price: "$" },
-    { name: "Macleod's Scottish Pub", hood: "Ballard", price: "$$" },
-    { name: "Olaf's", hood: "Ballard", price: "$" },
+    { name: "King's Hardware", hood: "Ballard", price: "$", vibe: "A no-nonsense Ballard dive with cheap drinks and a laid-back neighborhood crowd." },
+    { name: "George & Dragon Pub", hood: "Ballard", price: "$$", vibe: "A proper British pub in Ballard — pints, pub grub, and football on the telly." },
+    { name: "Hattie's Hat", hood: "Ballard", price: "$$", vibe: "A historic Ballard fixture known for its red flannel hash brunch and an old-school bar up front." },
+    { name: "Sloop Tavern", hood: "Ballard", price: "$", vibe: "A classic Ballard dive with cheap beer and no pretense." },
+    { name: "Ballard Smoke Shop", hood: "Ballard", price: "$", vibe: "Cheap cans, a well whiskey, and pull tabs — an old-school Ballard standby." },
+    { name: "Sunset Tavern", hood: "Ballard", price: "$", vibe: "A dive bar and music venue in one — cheap beer up front, live shows in the back." },
+    { name: "Macleod's Scottish Pub", hood: "Ballard", price: "$$", vibe: "A proper Scottish pub with a serious whisky list and hearty pub fare." },
+    { name: "Olaf's", hood: "Ballard", price: "$", vibe: "A cozy Ballard dive with a loyal, low-key neighborhood following." },
     // Fremont
-    { name: "Pacific Inn Pub", hood: "Fremont", price: "$" },
+    { name: "Pacific Inn Pub", hood: "Fremont", price: "$", vibe: "A Fremont institution — a classic neighborhood dive with beer, flat screens, and a jukebox." },
     // Phinney Ridge
-    { name: "Tin Hat Bar & Grill", hood: "Phinney Ridge", price: "$$" },
-    { name: "Sully's Snowgoose Saloon", hood: "Phinney Ridge", price: "$" },
+    { name: "Tin Hat Bar & Grill", hood: "Phinney Ridge", price: "$$", vibe: "A Phinney Ridge neighborhood bar and grill with a solid tap list." },
+    { name: "Sully's Snowgoose Saloon", hood: "Phinney Ridge", price: "$", vibe: "A ski-chalet-shaped dive with a taxidermy goose watching over the bar — as Phinney Ridge as it gets." },
     // Queen Anne
-    { name: "Streamline Tavern", hood: "Queen Anne", price: "$" },
-    { name: "Targy's Tavern", hood: "Queen Anne", price: "$" },
+    { name: "Streamline Tavern", hood: "Queen Anne", price: "$", vibe: "A genuine Queen Anne dive bar — strong drinks, cheap beer, no frills." },
+    { name: "Targy's Tavern", hood: "Queen Anne", price: "$", vibe: "A neighborhood Queen Anne tavern for a low-key beer and a game on the TV." },
     // University District
-    { name: "Blue Moon Tavern", hood: "University District", price: "$" },
-    { name: "College Inn Pub", hood: "University District", price: "$" },
+    { name: "Blue Moon Tavern", hood: "University District", price: "$", vibe: "A University District institution since 1934 — cheap beer, a storied literary history, and a loyal crowd of regulars." },
+    { name: "College Inn Pub", hood: "University District", price: "$", vibe: "A basement pub near campus with pitchers, pool, and a rowdy Huskies-game crowd." },
     // Georgetown
-    { name: "Jules Maes Saloon", hood: "Georgetown", price: "$$" },
-    { name: "Marco Polo Bar & Grill", hood: "Georgetown", price: "$$" },
+    { name: "Jules Maes Saloon", hood: "Georgetown", price: "$$", vibe: "Seattle's oldest bar, reopened in 2021 after a scare — comfort food, a solid beer and cocktail list, and live music some nights." },
+    { name: "Marco Polo Bar & Grill", hood: "Georgetown", price: "$$", vibe: "A Georgetown neighborhood bar and grill, easygoing and unpretentious." },
     // Wallingford
-    { name: "Leny's Place", hood: "Wallingford", price: "$" },
+    { name: "Leny's Place", hood: "Wallingford", price: "$", vibe: "A low-key Wallingford neighborhood bar for a quiet beer." },
     // Eastlake
-    { name: "Eastlake Zoo Tavern", hood: "Eastlake", price: "$" },
+    { name: "Eastlake Zoo Tavern", hood: "Eastlake", price: "$", vibe: "A scrappy Eastlake dive with a loyal, low-key crowd." },
     // Pioneer Square
-    { name: "Central Saloon", hood: "Pioneer Square", price: "$" },
+    { name: "Central Saloon", hood: "Pioneer Square", price: "$", vibe: "Seattle's oldest saloon — hosted Nirvana's first Seattle show, still pours cheap and reliable drinks with live music most nights." },
     // West Seattle
-    { name: "Poggie Tavern", hood: "West Seattle", price: "$$" },
+    { name: "Poggie Tavern", hood: "West Seattle", price: "$$", vibe: "A West Seattle neighborhood tavern with a friendly, regulars-first feel." },
     // South Park
-    { name: "Loretta's Northwesterner", hood: "South Park", price: "$" },
+    { name: "Loretta's Northwesterner", hood: "South Park", price: "$", vibe: "A South Park institution known for its burger, plush booths, and beers under $5 — plus a hidden back patio." },
     // Madison Park
-    { name: "Red Onion Tavern", hood: "Madison Park", price: "$$" },
+    { name: "Red Onion Tavern", hood: "Madison Park", price: "$$", vibe: "A Madison Park neighborhood tavern with a slightly more polished, upscale-adjacent feel." },
     // Ravenna/Roosevelt
-    { name: "The Duchess Tavern", hood: "Ravenna/Roosevelt", price: "$$" },
+    { name: "The Duchess Tavern", hood: "Ravenna/Roosevelt", price: "$$", vibe: "A Ravenna/Roosevelt neighborhood tavern, casual and unfussy." },
     // New additions — see new-venues-draft.md for verification notes.
     // Ballard
-    { name: "Kangaroo & Kiwi", hood: "Ballard", price: "$" },
-    { name: "Lock & Keel Tavern", hood: "Ballard", price: "$" },
-    { name: "Rough & Tumble (Ballard)", hood: "Ballard", price: "$$" },
+    { name: "Kangaroo & Kiwi", hood: "Ballard", price: "$", vibe: "An Australian-themed pub in a converted Carnegie library — meat pies, footy on the screens, and regular trivia nights." },
+    { name: "Lock & Keel Tavern", hood: "Ballard", price: "$", vibe: "A nautical-themed dive that calls itself \"Ballard Avenue's most regular of watering holes\" — and it earns it." },
+    { name: "Rough & Tumble (Ballard)", hood: "Ballard", price: "$$", vibe: "Seattle's first women's sports bar — 18 screens, craft beer, and a genuinely great place to watch any game." },
     // Capitol Hill
-    { name: "Montana", hood: "Capitol Hill", price: "$" },
+    { name: "Montana", hood: "Capitol Hill", price: "$", vibe: "A Capitol Hill dive that pioneered cocktails on tap — casual, a little scuffed up, very Seattle." },
     // Belltown
-    { name: "Shorty's", hood: "Belltown", price: "$" },
+    { name: "Shorty's", hood: "Belltown", price: "$", vibe: "A Coney-Island-themed pinball dive with clown decor and hot dogs since 1997 — a Belltown icon." },
     // Columbia City
-    { name: "Rough & Tumble (Columbia City)", hood: "Columbia City", price: "$$" },
+    { name: "Rough & Tumble (Columbia City)", hood: "Columbia City", price: "$$", vibe: "The Columbia City outpost of Seattle's women's sports bar — big screens, full bar, real community energy." },
     // Greenwood
-    { name: "Baranof", hood: "Greenwood", price: "$" },
+    { name: "Baranof", hood: "Greenwood", price: "$", vibe: "A Greenwood nautical dive that also serves breakfast — karaoke, pool, and a devoted neighborhood following." },
     // Magnolia
-    { name: "Boxcar Ale House", hood: "Magnolia", price: "$" }
+    { name: "Boxcar Ale House", hood: "Magnolia", price: "$", vibe: "A beloved Magnolia dive with karaoke, a ping-pong patio, and cheap PBR — a real neighborhood hangout." }
   ];
 
   // Cocktail Mode — straightforward cocktail-bar language, and its own
@@ -1184,30 +1197,30 @@
   // the entrance isn't separately listed on Google Maps.
   const speakeasyVenues = [
     // Capitol Hill
-    { name: "Canon", hood: "Capitol Hill", price: "$$$" },
-    { name: "Liberty", hood: "Capitol Hill", price: "$$" },
-    { name: "Bait Shop", hood: "Capitol Hill", price: "$$" },
-    { name: "The Doctor's Office", hood: "Capitol Hill", price: "$$" },
-    { name: "Herb & Bitter Public House", hood: "Capitol Hill", price: "$$" },
-    { name: "Rumba", hood: "Capitol Hill", price: "$$" },
-    { name: "Inside Passage", hood: "Capitol Hill", price: "$$$" },
-    { name: "Needle & Thread", hood: "Capitol Hill", mapName: "Tavern Law", price: "$$$" },
+    { name: "Canon", hood: "Capitol Hill", price: "$$$", vibe: "One of the most acclaimed whiskey and cocktail bars in the country — an enormous spirits collection and serious craft." },
+    { name: "Liberty", hood: "Capitol Hill", price: "$$", vibe: "A longtime Capitol Hill cocktail bar with a relaxed, unpretentious vibe." },
+    { name: "Bait Shop", hood: "Capitol Hill", price: "$$", vibe: "A tiki-themed cocktail bar with tropical drinks and a fun, escapist vibe." },
+    { name: "The Doctor's Office", hood: "Capitol Hill", price: "$$", vibe: "A well-regarded Capitol Hill cocktail bar with a focused, craft-forward menu." },
+    { name: "Herb & Bitter Public House", hood: "Capitol Hill", price: "$$", vibe: "A Capitol Hill cocktail bar built around herbal and bitter-forward drinks — great for adventurous orders." },
+    { name: "Rumba", hood: "Capitol Hill", price: "$$", vibe: "A rum specialist with hundreds of bottles and a half-dozen styles of daiquiri — a spot of Caribbean sunshine on Capitol Hill." },
+    { name: "Inside Passage", hood: "Capitol Hill", price: "$$$", vibe: "An underwater-themed hidden speakeasy tucked behind Rumba — moody, immersive, worth the search." },
+    { name: "Needle & Thread", hood: "Capitol Hill", mapName: "Tavern Law", price: "$$$", vibe: "A hidden speakeasy accessed through Tavern Law — one of Seattle's original craft cocktail destinations." },
     // Ballard
-    { name: "Percy's & Co.", hood: "Ballard", price: "$$" },
-    { name: "Essex", hood: "Ballard", price: "$$" },
-    { name: "Baker's", hood: "Ballard", price: "$$" },
+    { name: "Percy's & Co.", hood: "Ballard", price: "$$", vibe: "A stylish Ballard cocktail bar with a well-crafted, seasonal drink menu." },
+    { name: "Essex", hood: "Ballard", price: "$$", vibe: "A cozy Ballard cocktail lounge, good for a quieter night out." },
+    { name: "Baker's", hood: "Ballard", price: "$$", vibe: "A Ballard cocktail bar with a loyal following that rallied to keep it open." },
     // Belltown
-    { name: "Rob Roy", hood: "Belltown", price: "$$$" },
-    { name: "Roquette", hood: "Belltown", price: "$$" },
-    { name: "Bathtub Gin & Co.", hood: "Belltown", price: "$$$" },
+    { name: "Rob Roy", hood: "Belltown", price: "$$$", vibe: "A long-running, highly regarded Belltown cocktail bar — a Seattle classic for serious drinks." },
+    { name: "Roquette", hood: "Belltown", price: "$$", vibe: "A Belltown cocktail bar with a creative, well-executed menu." },
+    { name: "Bathtub Gin & Co.", hood: "Belltown", price: "$$$", vibe: "A speakeasy-style Belltown cocktail bar with a moody, intimate feel." },
     // Queen Anne
-    { name: "Rich Rich", hood: "Queen Anne", price: "$$" },
+    { name: "Rich Rich", hood: "Queen Anne", price: "$$", vibe: "A stylish Queen Anne cocktail bar with a playful, photogenic vibe." },
     // Fremont
-    { name: "Stampede Cocktail Club", hood: "Fremont", price: "$$" },
+    { name: "Stampede Cocktail Club", hood: "Fremont", price: "$$", vibe: "A Fremont cocktail club with a fun, high-energy atmosphere." },
     // Greenwood
-    { name: "Dark Room", hood: "Greenwood", price: "$$" },
+    { name: "Dark Room", hood: "Greenwood", price: "$$", vibe: "A moody Greenwood cocktail bar earning recent local press for its craft and atmosphere." },
     // Pioneer Square
-    { name: "Dead Line", hood: "Pioneer Square", price: "$$" }
+    { name: "Dead Line", hood: "Pioneer Square", price: "$$", vibe: "A Pioneer Square cocktail bar with a sleek, modern take on the neighborhood's historic bones." }
   ];
 
   // Upcoming Mode — real, dated Seattle-area events where you can plausibly
@@ -1367,6 +1380,53 @@
       return venuePool;
     }
     return filtered;
+  }
+
+  // --- "Why this pick" description ---------------------------------------
+  // Combines the venue's static vibe blurb with a short, templated sentence
+  // reflecting whatever Refine/onboarding state is actually active right
+  // now. This is static content (each vibe blurb is fixed, hand-written —
+  // see the venue arrays above) plus simple string assembly, not a live
+  // AI call: real per-venue commentary without adding network dependency,
+  // latency, or ongoing cost to the core tap-to-roll loop. See the backlog
+  // for the fuller reasoning behind that trade-off.
+  const groupSizeFitPhrase = {
+    solo: "perfect for a solo mission",
+    duo: "great for just the two of you",
+    small: "a solid fit for a small crew",
+    crowd: "got plenty of room for a big group"
+  };
+
+  function buildFitReason(venueHood) {
+    const reasons = [];
+    if (selectedNeighborhood === '__remote__') {
+      reasons.push('a bit off the beaten path, like you wanted');
+    } else if (selectedNeighborhood) {
+      reasons.push('right in ' + venueHood);
+    }
+    // Same mode guard as refreshRefineChipLabel — don't cite "cheap" as a
+    // reason while the toggle itself is hidden (Cocktail mode).
+    if (priceSensitive && mode !== 'cocktail') reasons.push('easy on the wallet');
+    if (groupSize && groupSizeFitPhrase[groupSize]) reasons.push(groupSizeFitPhrase[groupSize]);
+
+    if (reasons.length === 0) return '';
+    let joined;
+    if (reasons.length === 1) joined = reasons[0];
+    else if (reasons.length === 2) joined = reasons[0] + ' and ' + reasons[1];
+    else joined = reasons.slice(0, -1).join(', ') + ', and ' + reasons[reasons.length - 1];
+    return "Picked because it's " + joined + '.';
+  }
+
+  // Renders the vibe blurb + fit reason into the #venueWhy element, or
+  // hides it entirely if the venue has no vibe data (legacy links from
+  // before this feature, or Upcoming-mode events).
+  function renderVenueWhy(venue) {
+    const el = document.getElementById('venueWhy');
+    if (!el) return;
+    if (!venue || !venue.vibe) { el.hidden = true; el.textContent = ''; return; }
+    const fitReason = buildFitReason(venue.hood);
+    el.textContent = venue.vibe + (fitReason ? ' ' + fitReason : '');
+    el.hidden = false;
   }
 
   // Returns { text, venue } — the venue object travels alongside the answer
@@ -2579,6 +2639,7 @@
     hint.textContent = 'Shaking...';
     shareStatus.textContent = '';
     venueMeta.classList.remove('visible');
+    renderVenueWhy(null);
     windowText.classList.remove('visible');
     windowText.classList.add('placeholder');
     windowText.textContent = '...';
@@ -2613,6 +2674,7 @@
         venueHood.textContent = hoodText ? hoodText + ' · ' : '';
         venueMapLink.href = venueMapUrl(result.venue);
         venueMeta.classList.add('visible');
+        renderVenueWhy(result.venue);
         // Share works immediately off a plain (non-live) link — no need to
         // wait on a network round trip just to enable the button. The
         // Firestore doc that upgrades this into a LIVE-tracking link is
@@ -2740,6 +2802,7 @@
       venueHood.textContent = hoodText ? hoodText + ' · ' : '';
       venueMapLink.href = venueMapUrl(venue);
       venueMeta.classList.add('visible');
+      renderVenueWhy(venue);
       hint.style.display = 'none';
       hint.textContent = '';
       currentRollId = rollId;
@@ -2818,6 +2881,7 @@
       venueHood.textContent = hoodText ? hoodText + ' · ' : '';
       venueMapLink.href = venueMapUrl(venue);
       venueMeta.classList.add('visible');
+      renderVenueWhy(venue);
       hint.style.display = 'none';
       hint.textContent = '';
       currentRollId = null; // no live doc backs a legacy link
