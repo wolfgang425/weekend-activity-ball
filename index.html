@@ -34,13 +34,21 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    /* Was justify-content: center — but centering ties the header's
+       position to total page height, and that height changes a lot
+       between the placeholder state and a full result (venue-meta +
+       venue-why blurb add real height). Centering could push the header
+       above the visible area once that extra content appeared, with
+       nothing to auto-scroll it back into view. Anchoring to the top
+       keeps the header's position fixed regardless of how tall the
+       result below it gets. */
+    justify-content: flex-start;
     font-family: 'Work Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background:
       radial-gradient(circle at 50% 15%, var(--wood-1) 0%, var(--wood-2) 55%, var(--wood-3) 100%);
     color: var(--foam);
     overflow-x: hidden;
-    padding: 24px 16px 40px;
+    padding: 48px 16px 40px;
   }
 
   h1 {
@@ -188,7 +196,7 @@
   }
 
   .ball.shaking {
-    animation: shake 0.9s ease-in-out;
+    animation: shake 2.5s ease-in-out;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -246,14 +254,23 @@
     font-size: clamp(0.72rem, 2.6vw, 0.95rem);
     line-height: 1.35;
     opacity: 0;
-    transform: scale(0.85);
-    transition: opacity 0.35s ease, transform 0.35s ease;
+    /* Starts low, soft-focus, and slightly small — like the die is still
+       down in the murky liquid — then rises, sharpens, and settles as it
+       reaches the surface. cubic-bezier gives it a gentle float-and-settle
+       feel rather than a linear slide. */
+    transform: translateY(22px) scale(0.9);
+    filter: blur(4px);
+    transition:
+      opacity 1.3s ease-out,
+      transform 1.3s cubic-bezier(0.16, 1, 0.3, 1),
+      filter 1.3s ease-out;
     text-shadow: 0 0 10px rgba(245,166,35,0.55);
   }
 
   .window-text.visible {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 
   .window-text.placeholder {
@@ -2122,20 +2139,20 @@
   function playShakeSound() {
     const ctx = getCtx();
     const now = ctx.currentTime;
-    const thumps = 7;
+    const thumps = 11; // fewer, slower, deeper thumps spread across ~2.3s
     for (let i = 0; i < thumps; i++) {
-      const t = now + i * 0.11 + Math.random() * 0.02;
+      const t = now + i * 0.21 + Math.random() * 0.03;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(90 + Math.random() * 40, t);
-      osc.frequency.exponentialRampToValueAtTime(50, t + 0.08);
+      osc.frequency.setValueAtTime(70 + Math.random() * 30, t);
+      osc.frequency.exponentialRampToValueAtTime(40, t + 0.14);
       gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
       osc.connect(gain).connect(ctx.destination);
       osc.start(t);
-      osc.stop(t + 0.1);
+      osc.stop(t + 0.18);
     }
   }
 
@@ -2675,6 +2692,10 @@
         venueMapLink.href = venueMapUrl(result.venue);
         venueMeta.classList.add('visible');
         renderVenueWhy(result.venue);
+        showOwnRollActions();
+        setPrimaryCta('share');
+        currentCalendarInfo = buildCalendarInfo(result.venue, result.text);
+        setCalendarLinkHref(currentCalendarInfo);
         // Share works immediately off a plain (non-live) link — no need to
         // wait on a network round trip just to enable the button. The
         // Firestore doc that upgrades this into a LIVE-tracking link is
@@ -2721,7 +2742,7 @@
       askBtn.disabled = false;
       askBtn.textContent = 'Ask again 🎱';
       busy = false;
-    }, 900);
+    }, 2500);
   }
 
   ballWrap.addEventListener('click', ask);
