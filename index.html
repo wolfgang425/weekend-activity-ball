@@ -34,21 +34,13 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* Was justify-content: center — but centering ties the header's
-       position to total page height, and that height changes a lot
-       between the placeholder state and a full result (venue-meta +
-       venue-why blurb add real height). Centering could push the header
-       above the visible area once that extra content appeared, with
-       nothing to auto-scroll it back into view. Anchoring to the top
-       keeps the header's position fixed regardless of how tall the
-       result below it gets. */
-    justify-content: flex-start;
+    justify-content: center;
     font-family: 'Work Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background:
       radial-gradient(circle at 50% 15%, var(--wood-1) 0%, var(--wood-2) 55%, var(--wood-3) 100%);
     color: var(--foam);
     overflow-x: hidden;
-    padding: 48px 16px 40px;
+    padding: 24px 16px 40px;
   }
 
   h1 {
@@ -73,6 +65,7 @@
 
   .mode-dropdown {
     position: relative;
+    margin-bottom: 22px;
   }
 
   button.mode-dropdown-btn {
@@ -167,36 +160,25 @@
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    /* body is a fixed-height (100%) flex column, so any child defaults to
-       flex-shrink:1 — without this, content taller than the viewport (e.g.
-       the Refine panel expanded to show every neighborhood) squishes the
-       ball into an oval instead of letting the page scroll. The ball must
-       always stay circular regardless of how much else is on the page. */
-    flex-shrink: 0;
   }
 
   .ball {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    /* A true black glossy shell — real color/luminance contrast against
-       the warm brown wood background, rather than the previous brown-
-       toned gradient (which was too close to the background's own hue)
-       or a glow effect layered on top. */
     background:
-      radial-gradient(circle at 32% 28%, #4a4a4a 0%, #1c1c1c 32%, #0a0a0a 65%, #000000 100%);
+      radial-gradient(circle at 32% 28%, #4a3320 0%, #241a10 38%, #0f0a06 75%, #050302 100%);
     box-shadow:
-      0 18px 44px rgba(0,0,0,0.7),
-      inset 0 -10px 30px rgba(0,0,0,0.7),
-      inset 0 10px 22px rgba(255,255,255,0.08);
+      0 18px 40px rgba(0,0,0,0.55),
+      inset 0 -10px 30px rgba(0,0,0,0.6),
+      inset 0 10px 22px rgba(255,255,255,0.06);
     position: relative;
-    z-index: 1;
     transform-origin: 50% 90%;
     transition: transform 0.05s;
   }
 
   .ball.shaking {
-    animation: shake 2.5s ease-in-out;
+    animation: shake 0.9s ease-in-out;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -254,23 +236,14 @@
     font-size: clamp(0.72rem, 2.6vw, 0.95rem);
     line-height: 1.35;
     opacity: 0;
-    /* Starts low, soft-focus, and slightly small — like the die is still
-       down in the murky liquid — then rises, sharpens, and settles as it
-       reaches the surface. cubic-bezier gives it a gentle float-and-settle
-       feel rather than a linear slide. */
-    transform: translateY(22px) scale(0.9);
-    filter: blur(4px);
-    transition:
-      opacity 1.3s ease-out,
-      transform 1.3s cubic-bezier(0.16, 1, 0.3, 1),
-      filter 1.3s ease-out;
+    transform: scale(0.85);
+    transition: opacity 0.35s ease, transform 0.35s ease;
     text-shadow: 0 0 10px rgba(245,166,35,0.55);
   }
 
   .window-text.visible {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
+    transform: scale(1);
   }
 
   .window-text.placeholder {
@@ -304,17 +277,6 @@
   .venue-meta.visible {
     display: flex;
   }
-
-  .venue-why {
-    font-size: 0.82rem;
-    color: var(--text-dim);
-    text-align: center;
-    max-width: 340px;
-    margin: 0 auto 14px;
-    line-height: 1.5;
-  }
-
-  .venue-why[hidden] { display: none; }
 
   a.venue-map-link {
     color: var(--amber);
@@ -559,323 +521,6 @@
     border-radius: 10px;
     border: 1px solid rgba(245, 166, 35, 0.2);
   }
-
-  /* Live "who's in" list — populated from Firestore (see subscribeToRoll).
-     Hidden entirely when there are zero RSVPs yet, same [hidden]-override
-     pattern used elsewhere in this file (see the .actions[hidden] comment
-     above) since this element could pick up a flex/block author rule later. */
-  .rsvp-list {
-    font-size: 0.85rem;
-    color: var(--text-dim);
-    text-align: center;
-    max-width: 320px;
-    line-height: 1.5;
-  }
-
-  .rsvp-list[hidden] {
-    display: none;
-  }
-
-  .rsvp-list strong {
-    color: var(--amber);
-  }
-  /* --- Onboarding modal (city/group/composition, shown on first load) --- */
-  .onboarding-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(5, 3, 2, 0.82);
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    z-index: 100;
-  }
-  .onboarding-modal.visible { display: flex; }
-  .onboarding-modal-inner {
-    background: linear-gradient(180deg, var(--wood-1), var(--wood-3));
-    border: 1px solid rgba(245, 166, 35, 0.25);
-    border-radius: 20px;
-    padding: 24px 22px;
-    max-width: 380px;
-    width: 100%;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
-  }
-  .setup-heading {
-    font-family: 'Bevan', Georgia, serif;
-    font-weight: 400;
-    font-size: 1.15rem;
-    text-align: center;
-    margin: 0 0 6px;
-    color: var(--foam);
-  }
-  .setup-lead {
-    font-size: 0.82rem;
-    color: var(--text-dim);
-    text-align: center;
-    margin: 0 0 20px;
-  }
-  .field-label {
-    font-size: 0.7rem;
-    color: var(--text-dimmer);
-    margin: 0 0 8px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-  }
-  .city-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(0,0,0,0.25);
-    border: 1px solid rgba(245,166,35,0.15);
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 6px;
-  }
-  .city-row .city-name { font-size: 0.9rem; font-weight: 600; color: var(--foam); }
-  .city-row .change-link {
-    font-size: 0.75rem;
-    color: var(--amber);
-    text-decoration: underline;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 0;
-    font-family: 'Work Sans', sans-serif;
-  }
-  .city-note {
-    font-size: 0.74rem;
-    color: var(--text-dim);
-    margin: 0 0 18px;
-    line-height: 1.4;
-  }
-  .pill-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 18px;
-  }
-  .pill-btn {
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-align: center;
-    padding: 10px 8px;
-    border-radius: 10px;
-    border: 1.5px solid rgba(245,166,35,0.2);
-    color: var(--text-dim);
-    cursor: pointer;
-    background: none;
-    font-family: 'Work Sans', sans-serif;
-  }
-  .pill-btn.selected {
-    background: rgba(245,166,35,0.14);
-    border-color: var(--amber-deep);
-    color: var(--foam);
-  }
-  .setup-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    margin-top: 4px;
-  }
-  .btn-primary {
-    width: 100%;
-    background: linear-gradient(180deg, var(--amber), var(--amber-deep));
-    color: var(--ink);
-    border: none;
-    padding: 13px;
-    border-radius: 999px;
-    font-weight: 700;
-    font-size: 0.95rem;
-    cursor: pointer;
-    font-family: 'Work Sans', sans-serif;
-  }
-  .skip-link { font-size: 0.78rem; color: var(--text-dimmer); text-decoration: underline; cursor: pointer; background: none; border: none; }
-
-  /* --- Controls row: mode dropdown + Refine chip --- */
-  .controls-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
-  }
-  button.refine-chip {
-    font-family: 'Work Sans', sans-serif;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text-dim);
-    background: none;
-    border: 1px solid rgba(245,166,35,0.25);
-    padding: 8px 14px;
-    border-radius: 999px;
-    cursor: pointer;
-  }
-  button.refine-chip:hover { color: var(--foam); }
-  button.refine-chip.active {
-    color: var(--foam);
-    background: rgba(245,166,35,0.12);
-    border-color: var(--amber-deep);
-  }
-  .refine-chevron {
-    transition: transform 0.15s ease;
-    flex-shrink: 0;
-  }
-  button.refine-chip[aria-expanded="true"] .refine-chevron {
-    transform: rotate(180deg);
-  }
-
-  /* --- Refine panel (neighborhood + price, plus a summary of onboarding choices) --- */
-  .refine-panel {
-    text-align: left;
-    background: rgba(0,0,0,0.25);
-    border: 1px solid rgba(245,166,35,0.18);
-    border-radius: 14px;
-    padding: 16px;
-    margin: 0 auto 18px;
-    max-width: 380px;
-  }
-  .refine-panel[hidden] { display: none; }
-  .refine-row { margin-bottom: 14px; }
-  .refine-row:last-child { margin-bottom: 0; }
-  .refine-row .field-label { margin-bottom: 8px; }
-  .refine-divider {
-    height: 1px;
-    background: rgba(245,166,35,0.12);
-    margin: 0 0 14px;
-  }
-  .setup-summary {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .setup-chip {
-    font-size: 0.72rem;
-    color: var(--text-dim);
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(245,166,35,0.15);
-    padding: 5px 10px;
-    border-radius: 999px;
-  }
-  .setup-edit-link {
-    font-size: 0.72rem;
-    color: var(--amber);
-    text-decoration: underline;
-    cursor: pointer;
-    margin-left: auto;
-    background: none;
-    border: none;
-  }
-  .neighborhood-select {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .neighborhood-select .hood-chip {
-    font-size: 0.72rem;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(245,166,35,0.2);
-    color: var(--text-dim);
-    cursor: pointer;
-    background: none;
-    font-family: 'Work Sans', sans-serif;
-  }
-  .neighborhood-select .hood-chip.selected {
-    background: rgba(245,166,35,0.14);
-    border-color: var(--amber-deep);
-    color: var(--foam);
-  }
-  .neighborhood-select .hood-chip em { font-style: normal; color: var(--text-dimmer); font-size: 0.68rem; }
-  .neighborhood-select .hood-more-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--amber);
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px dashed rgba(245,166,35,0.35);
-    background: none;
-    font-family: 'Work Sans', sans-serif;
-  }
-  .neighborhood-select .hood-overflow[hidden] { display: none; }
-  .neighborhood-select .hood-pinned {
-    font-size: 0.72rem;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px dashed rgba(245,166,35,0.35);
-    color: var(--text-dim);
-    cursor: pointer;
-    background: none;
-    font-family: 'Work Sans', sans-serif;
-  }
-  .neighborhood-select .hood-pinned.selected {
-    background: rgba(245,166,35,0.14);
-    border-color: var(--amber-deep);
-    color: var(--foam);
-  }
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  /* Same pattern as .actions[hidden] elsewhere in this file: an author
-     rule setting `display` beats the browser's built-in [hidden]{display:
-     none} for any element carrying that class, so priceToggleRow needs
-     this explicit override to actually disappear in Cocktail mode instead
-     of rendering on top of (or squeezed among) the visible panel. */
-  .toggle-row[hidden] { display: none; }
-  .toggle-row .toggle-label { font-size: 0.85rem; font-weight: 500; color: var(--foam); }
-  .price-note {
-    font-size: 0.7rem;
-    color: var(--text-dimmer);
-    margin-top: 6px;
-    line-height: 1.4;
-  }
-  .price-note[hidden] { display: none; }
-  .switch {
-    width: 40px; height: 22px; border-radius: 999px;
-    background: rgba(245,166,35,0.2);
-    position: relative;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .switch.on { background: var(--amber-deep); }
-  .switch::after {
-    content: ''; position: absolute; top: 2px; left: 2px;
-    width: 18px; height: 18px; border-radius: 50%; background: var(--foam);
-    transition: left 0.15s ease;
-  }
-  .switch.on::after { left: 20px; }
-
-  /* --- Reroll nudge toast --- */
-  .nudge-toast {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    background: rgba(0,0,0,0.35);
-    border: 1px solid rgba(245,166,35,0.3);
-    border-radius: 14px;
-    padding: 14px;
-    margin: 0 auto 18px;
-    max-width: 380px;
-    text-align: left;
-  }
-  .nudge-toast[hidden] { display: none; }
-  .nudge-toast .nudge-text { font-size: 0.8rem; color: var(--foam); line-height: 1.4; }
-  .nudge-toast .nudge-actions { display: flex; align-items: center; justify-content: space-between; }
-  .nudge-refine-btn {
-    font-family: 'Work Sans', sans-serif;
-    font-size: 0.75rem; font-weight: 700; color: var(--ink);
-    background: linear-gradient(180deg, var(--amber), var(--amber-deep));
-    border: none; padding: 7px 16px; border-radius: 999px; cursor: pointer; white-space: nowrap;
-  }
-  .nudge-dismiss { font-size: 0.75rem; color: var(--text-dimmer); cursor: pointer; text-decoration: underline; background: none; border: none; }
 </style>
 </head>
 <body>
@@ -883,44 +528,21 @@
   <h1>The Weekend Activity Ball</h1>
   <p class="subtitle">Can't decide what to do this weekend? Ask the Weekend Activity Ball. It always has an answer to the age old question.</p>
 
-  <div class="controls-row" id="controlsRow">
-    <div class="mode-dropdown" id="modeDropdown">
-      <button class="mode-dropdown-btn" id="modeDropdownBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="modeDropdownList">
-        <span id="modeDropdownLabel">Degenerate</span>
-        <svg class="mode-dropdown-chevron" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <ul class="mode-dropdown-list" id="modeDropdownList" role="listbox" aria-labelledby="modeDropdownLabel" hidden>
-        <li class="mode-dropdown-option active" id="modeDegenerate" role="option" aria-selected="true" data-mode="degenerate">Degenerate</li>
-        <li class="mode-dropdown-option" id="modeLowKey" role="option" aria-selected="false" data-mode="lowkey">Low-Key</li>
-        <li class="mode-dropdown-option" id="modeCocktail" role="option" aria-selected="false" data-mode="cocktail">Cocktail</li>
-        <!-- Upcoming mode paused (Sep 2026) to focus on the core three themes —
-             its data/logic is still intact below (upcomingEvents,
-             computeUpcomingPool, nextAnswer/hydrateFromUrl branches), so
-             re-enabling it later is just uncommenting this option back in. -->
-        <!-- <li class="mode-dropdown-option" id="modeUpcoming" role="option" aria-selected="false" data-mode="upcoming">Upcoming</li> -->
-      </ul>
-    </div>
-    <button class="refine-chip" id="refineChipBtn" type="button" aria-expanded="false" aria-controls="refinePanel">
-      <span id="refineChipLabel">⚙ Refine</span>
-      <svg class="refine-chevron" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="mode-dropdown" id="modeDropdown">
+    <button class="mode-dropdown-btn" id="modeDropdownBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="modeDropdownList">
+      <span id="modeDropdownLabel">Degenerate</span>
+      <svg class="mode-dropdown-chevron" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
-  </div>
-
-  <div class="refine-panel" id="refinePanel" hidden>
-    <div class="refine-row">
-      <div class="field-label">YOUR SETUP</div>
-      <div class="setup-summary" id="setupSummary"></div>
-    </div>
-    <div class="refine-divider"></div>
-    <div class="refine-row">
-      <div class="field-label">NEIGHBORHOOD</div>
-      <div class="neighborhood-select" id="neighborhoodSelect"></div>
-    </div>
-    <div class="refine-row toggle-row" id="priceToggleRow">
-      <span class="toggle-label">Keep it cheap</span>
-      <div class="switch" id="priceToggle" role="switch" aria-checked="false" tabindex="0"></div>
-    </div>
-    <p class="price-note" id="cocktailPriceNote" hidden>Not available in Cocktail mode — every venue here runs about the same.</p>
+    <ul class="mode-dropdown-list" id="modeDropdownList" role="listbox" aria-labelledby="modeDropdownLabel" hidden>
+      <li class="mode-dropdown-option active" id="modeDegenerate" role="option" aria-selected="true" data-mode="degenerate">Degenerate</li>
+      <li class="mode-dropdown-option" id="modeLowKey" role="option" aria-selected="false" data-mode="lowkey">Low-Key</li>
+      <li class="mode-dropdown-option" id="modeCocktail" role="option" aria-selected="false" data-mode="cocktail">Cocktail</li>
+      <!-- Upcoming mode paused (Sep 2026) to focus on the core three themes —
+           its data/logic is still intact below (upcomingEvents,
+           computeUpcomingPool, nextAnswer/hydrateFromUrl branches), so
+           re-enabling it later is just uncommenting this option back in. -->
+      <!-- <li class="mode-dropdown-option" id="modeUpcoming" role="option" aria-selected="false" data-mode="upcoming">Upcoming</li> -->
+    </ul>
   </div>
 
   <div class="ball-wrap" id="ballWrap">
@@ -940,24 +562,13 @@
     <a class="venue-map-link" id="venueCalendarLink" href="#">Add to Calendar</a>
   </div>
 
-  <p class="venue-why" id="venueWhy" hidden></p>
-
   <div class="hint" id="hint">Click or tap the 8 ball to get your weekend activity!</div>
-
-  <div class="nudge-toast" id="rerollNudge" hidden>
-    <span class="nudge-text">Rolled a few times? Want to narrow it down by neighborhood or budget?</span>
-    <div class="nudge-actions">
-      <button class="nudge-dismiss" id="nudgeDismissBtn" type="button">Not now</button>
-      <button class="nudge-refine-btn" id="nudgeRefineBtn" type="button">Refine</button>
-    </div>
-  </div>
 
   <div class="actions" id="actions">
     <button class="tap-btn" id="commitBtn" hidden>I'm In — Add to Calendar 📅</button>
     <button class="tap-btn" id="askBtn">Ask the Ball 🎱</button>
     <button class="share-btn" id="shareBtn" disabled>Share Result 📤</button>
     <div class="share-status" id="shareStatus" aria-live="polite"></div>
-    <div class="rsvp-list" id="rsvpList" hidden aria-live="polite"></div>
   </div>
 
   <div class="actions commit-confirm" id="commitConfirm" hidden>
@@ -966,42 +577,6 @@
     <p class="confirm-subtext">This only updates your own calendar — reply in the thread so the group actually knows you're in.</p>
     <p class="reply-preview">"I'm in! 🍺"</p>
     <button class="share-btn" id="copyReplyBtn" type="button">Copy Reply Text</button>
-    <div class="rsvp-list" id="rsvpListConfirm" hidden aria-live="polite"></div>
-  </div>
-
-  <div class="onboarding-modal" id="onboardingModal">
-    <div class="onboarding-modal-inner">
-      <div class="setup-heading">Where and who's rolling?</div>
-      <p class="setup-lead">Helps pick better bars. Skip if you just want to play.</p>
-
-      <div class="field-label">CITY</div>
-      <div class="city-row">
-        <span class="city-name">📍 Seattle, WA</span>
-        <button class="change-link" id="notInSeattleLink" type="button">Not in Seattle?</button>
-      </div>
-      <p class="city-note" id="cityNote" hidden>Weekend Activity Ball is Seattle-only for now — more cities coming soon.</p>
-
-      <div class="field-label">HOW MANY OF YOU?</div>
-      <div class="pill-grid" id="groupSizeGrid">
-        <button class="pill-btn" type="button" data-value="solo">Just me</button>
-        <button class="pill-btn" type="button" data-value="duo">Me + 1</button>
-        <button class="pill-btn" type="button" data-value="small">A few of us</button>
-        <button class="pill-btn" type="button" data-value="crowd">The whole gang</button>
-      </div>
-
-      <div class="field-label">WHO'S OUT</div>
-      <div class="pill-grid" id="groupCompGrid">
-        <button class="pill-btn" type="button" data-value="guys">Guys</button>
-        <button class="pill-btn" type="button" data-value="mixed">Mixed</button>
-        <button class="pill-btn" type="button" data-value="girls">Girls</button>
-        <button class="pill-btn" type="button" data-value="couple">Couple</button>
-      </div>
-
-      <div class="setup-actions">
-        <button class="btn-primary" id="onboardingContinueBtn" type="button">Continue</button>
-        <button class="skip-link" id="onboardingSkipLink" type="button">Skip for now</button>
-      </div>
-    </div>
   </div>
 
   <div class="share-modal" id="shareModal">
@@ -1014,39 +589,7 @@
     </div>
   </div>
 
-<script type="module">
-  // --- Firebase (added for live RSVP tracking) ---------------------------
-  // This is a deliberate, discussed exception to this project's original
-  // "no live network calls, everything hardcoded" rule (see
-  // project-instructions.md). It exists for exactly one job: letting
-  // everyone who opens a shared link see a live, shared "who's in" list —
-  // something a static file genuinely cannot do on its own. Nothing else
-  // in the app (venue data, amounts, verbs, mode logic) talks to a network.
-  // The config below is a public client identifier, not a secret — Firebase
-  // enforces access via the Firestore security rules set in the console,
-  // not by hiding this object. Requires `type="module"` on this script tag
-  // so the `import` statements below can resolve before anything else in
-  // this file runs.
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-  import {
-    getFirestore, collection, doc, addDoc, getDoc, updateDoc,
-    onSnapshot, arrayUnion, serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDTq97EDpsZpWKexq_mhOWMlLyaZCmaCSU",
-    authDomain: "weekend-activity-ball.firebaseapp.com",
-    databaseURL: "https://weekend-activity-ball-default-rtdb.firebaseio.com",
-    projectId: "weekend-activity-ball",
-    storageBucket: "weekend-activity-ball.firebasestorage.app",
-    messagingSenderId: "851951464926",
-    appId: "1:851951464926:web:e3da87a6c07219d396ed4f",
-    measurementId: "G-2P5NSZ577F"
-  };
-  const fbApp = initializeApp(firebaseConfig);
-  const db = getFirestore(fbApp);
-  const ROLLS_COLLECTION = 'rolls';
-
+<script>
 (function () {
   // The answer is built from a template: VERB + AMOUNT + "at" + VENUE + "with" + CREW.
   const verbs = ["Drink", "Crush", "Pound", "Down", "Throw back", "Slam", "Demolish", "Knock back", "Suck down", "Put away"];
@@ -1064,59 +607,6 @@
 
   const crews = ["the absolute boys", "the boys", "the squad", "the gang", "the crew", "the fellas", "the guys"];
 
-  // --- Companion-clause word pools (crew-wording-draft.md) ---------------
-  // groupComposition/groupSize are captured in the onboarding modal but,
-  // until now, didn't change the answer at all. Size mostly decides the
-  // SENTENCE STRUCTURE (solo drops the clause; duo gets a lighter one-
-  // person phrase; small group keeps the existing "with the ___" template;
-  // crowd uses the same template but bigger-sounding words), and
-  // composition picks the WORD FAMILY within whichever structure size
-  // selects. `crews` above stays the default/fallback pool — used whenever
-  // composition is 'guys' or simply not set, which is also what a skipped
-  // onboarding falls back to (today's exact experience).
-  const girlsCrewPool = ["the girls", "the girlies", "the squad", "the gang", "the crew"];
-  const mixedCrewPool = ["the crew", "the gang", "the squad", "the group"];
-
-  // Crowd gets its own bigger-sounding variant rather than sharing Small
-  // group's pool verbatim — layered on top, not a replacement.
-  const crowdGuysPool = ["the whole crew", "everybody", "the whole squad"];
-  const crowdGirlsPool = ["the whole crew", "everybody", "the whole squad"];
-  const crowdMixedPool = ["the whole crew", "everybody", "the whole group"];
-
-  const guysDuoPool = ["your boy", "your right-hand man"];
-  const girlsDuoPool = ["your girl", "your ride-or-die"];
-  const mixedDuoPool = ["your +1", "your partner in crime"];
-  const couplePool = ["your date", "your plus-one", "your other half"];
-
-  // Returns just the bare companion word/phrase (e.g. "the boys", "your
-  // date"), or '' for solo. Deliberately NOT a full " with X" clause —
-  // this needs to slot into the same `crew` variable/URL param that
-  // legacy share links already use, so old links (which always had a
-  // non-empty word here) keep reconstructing correctly, and only new
-  // solo rolls introduce the empty-string case.
-  function pickCompanionWord() {
-    if (groupSize === 'solo') return '';
-    // Couple overrides whatever composition-by-size would otherwise pick,
-    // regardless of the size selected — a couple stays a couple even if
-    // someone also picked "Crowd" (kept independent per explicit decision,
-    // rather than forcing Couple to imply Duo).
-    if (groupComposition === 'couple') return pick(couplePool);
-    if (groupSize === 'duo') {
-      if (groupComposition === 'guys') return pick(guysDuoPool);
-      if (groupComposition === 'girls') return pick(girlsDuoPool);
-      return pick(mixedDuoPool); // mixed, or composition not set
-    }
-    if (groupSize === 'crowd') {
-      if (groupComposition === 'girls') return pick(crowdGirlsPool);
-      if (groupComposition === 'mixed') return pick(crowdMixedPool);
-      return pick(crowdGuysPool); // guys, or composition not set
-    }
-    // Small group / size not set — the original template.
-    if (groupComposition === 'girls') return pick(girlsCrewPool);
-    if (groupComposition === 'mixed') return pick(mixedCrewPool);
-    return pick(crews); // guys, or composition not set
-  }
-
   // Low-Key Mode — same venues and crews, but a tamer verb/amount pool for
   // when a full "Degenerate" night out isn't what's called for.
   const lowKeyVerbs = ["Sip", "Have", "Grab", "Nurse", "Enjoy", "Savor", "Order"];
@@ -1130,71 +620,51 @@
   // Static and hardcoded on purpose — no network calls, so nothing to break.
   // Each venue carries its neighborhood, used for the "Ballard" style caption
   // and the Google Maps search link under the ball.
-  // Price tiers ($/$$/$$$) added per venue-price-draft.md — see that file
-  // for confidence levels per row. Roughly a third were directly verified
-  // via web search (review/menu mentions of specific prices); the rest are
-  // inferred from the venue-type work in venue-type-draft.md, which is
-  // itself a best-effort guess. Powers the "Keep it cheap" Refine toggle.
   const venues = [
     // Capitol Hill
-    { name: "The Comet Tavern", hood: "Capitol Hill", price: "$", vibe: "A gritty Capitol Hill dive with stiff pours and cheap canned beer — no frills, all character." },
-    { name: "Linda's Tavern", hood: "Capitol Hill", price: "$", vibe: "Capitol Hill's cowboy-themed institution, taxidermy on the walls and a killer back patio — a tallboy of Rainier is the traditional order." },
-    { name: "Captain Black's", hood: "Capitol Hill", price: "$", vibe: "A low-key Capitol Hill dive for cheap drinks and zero pretension." },
-    { name: "The Pine Box", hood: "Capitol Hill", price: "$$", vibe: "A converted mortuary with a huge beer and cocktail list — yes, there's an open standing coffin between the bathrooms." },
-    { name: "Rhein Haus", hood: "Capitol Hill", price: "$$", vibe: "A sprawling German beer hall with bocce courts, house-made sausages, and a serious draft list." },
-    { name: "Crescent Lounge", hood: "Capitol Hill", price: "$", vibe: "A beloved dive with some of the best karaoke on Capitol Hill and a colorful cast of regulars." },
+    { name: "The Comet Tavern", hood: "Capitol Hill" },
+    { name: "Linda's Tavern", hood: "Capitol Hill" },
+    { name: "Captain Black's", hood: "Capitol Hill" },
+    { name: "The Pine Box", hood: "Capitol Hill" },
+    { name: "Rhein Haus", hood: "Capitol Hill" },
+    { name: "Crescent Lounge", hood: "Capitol Hill" },
     // Ballard
-    { name: "King's Hardware", hood: "Ballard", price: "$", vibe: "A no-nonsense Ballard dive with cheap drinks and a laid-back neighborhood crowd." },
-    { name: "George & Dragon Pub", hood: "Ballard", price: "$$", vibe: "A proper British pub in Ballard — pints, pub grub, and football on the telly." },
-    { name: "Hattie's Hat", hood: "Ballard", price: "$$", vibe: "A historic Ballard fixture known for its red flannel hash brunch and an old-school bar up front." },
-    { name: "Sloop Tavern", hood: "Ballard", price: "$", vibe: "A classic Ballard dive with cheap beer and no pretense." },
-    { name: "Ballard Smoke Shop", hood: "Ballard", price: "$", vibe: "Cheap cans, a well whiskey, and pull tabs — an old-school Ballard standby." },
-    { name: "Sunset Tavern", hood: "Ballard", price: "$", vibe: "A dive bar and music venue in one — cheap beer up front, live shows in the back." },
-    { name: "Macleod's Scottish Pub", hood: "Ballard", price: "$$", vibe: "A proper Scottish pub with a serious whisky list and hearty pub fare." },
-    { name: "Olaf's", hood: "Ballard", price: "$", vibe: "A cozy Ballard dive with a loyal, low-key neighborhood following." },
+    { name: "King's Hardware", hood: "Ballard" },
+    { name: "George & Dragon Pub", hood: "Ballard" },
+    { name: "Hattie's Hat", hood: "Ballard" },
+    { name: "Sloop Tavern", hood: "Ballard" },
+    { name: "Ballard Smoke Shop", hood: "Ballard" },
+    { name: "Sunset Tavern", hood: "Ballard" },
+    { name: "Macleod's Scottish Pub", hood: "Ballard" },
+    { name: "Olaf's", hood: "Ballard" },
     // Fremont
-    { name: "Pacific Inn Pub", hood: "Fremont", price: "$", vibe: "A Fremont institution — a classic neighborhood dive with beer, flat screens, and a jukebox." },
+    { name: "Pacific Inn Pub", hood: "Fremont" },
     // Phinney Ridge
-    { name: "Tin Hat Bar & Grill", hood: "Phinney Ridge", price: "$$", vibe: "A Phinney Ridge neighborhood bar and grill with a solid tap list." },
-    { name: "Sully's Snowgoose Saloon", hood: "Phinney Ridge", price: "$", vibe: "A ski-chalet-shaped dive with a taxidermy goose watching over the bar — as Phinney Ridge as it gets." },
+    { name: "Tin Hat Bar & Grill", hood: "Phinney Ridge" },
+    { name: "Sully's Snowgoose Saloon", hood: "Phinney Ridge" },
     // Queen Anne
-    { name: "Streamline Tavern", hood: "Queen Anne", price: "$", vibe: "A genuine Queen Anne dive bar — strong drinks, cheap beer, no frills." },
-    { name: "Targy's Tavern", hood: "Queen Anne", price: "$", vibe: "A neighborhood Queen Anne tavern for a low-key beer and a game on the TV." },
+    { name: "Streamline Tavern", hood: "Queen Anne" },
+    { name: "Targy's Tavern", hood: "Queen Anne" },
     // University District
-    { name: "Blue Moon Tavern", hood: "University District", price: "$", vibe: "A University District institution since 1934 — cheap beer, a storied literary history, and a loyal crowd of regulars." },
-    { name: "College Inn Pub", hood: "University District", price: "$", vibe: "A basement pub near campus with pitchers, pool, and a rowdy Huskies-game crowd." },
+    { name: "Blue Moon Tavern", hood: "University District" },
+    { name: "College Inn Pub", hood: "University District" },
     // Georgetown
-    { name: "Jules Maes Saloon", hood: "Georgetown", price: "$$", vibe: "Seattle's oldest bar, reopened in 2021 after a scare — comfort food, a solid beer and cocktail list, and live music some nights." },
-    { name: "Marco Polo Bar & Grill", hood: "Georgetown", price: "$$", vibe: "A Georgetown neighborhood bar and grill, easygoing and unpretentious." },
+    { name: "Jules Maes Saloon", hood: "Georgetown" },
+    { name: "Marco Polo Bar & Grill", hood: "Georgetown" },
     // Wallingford
-    { name: "Leny's Place", hood: "Wallingford", price: "$", vibe: "A low-key Wallingford neighborhood bar for a quiet beer." },
+    { name: "Leny's Place", hood: "Wallingford" },
     // Eastlake
-    { name: "Eastlake Zoo Tavern", hood: "Eastlake", price: "$", vibe: "A scrappy Eastlake dive with a loyal, low-key crowd." },
+    { name: "Eastlake Zoo Tavern", hood: "Eastlake" },
     // Pioneer Square
-    { name: "Central Saloon", hood: "Pioneer Square", price: "$", vibe: "Seattle's oldest saloon — hosted Nirvana's first Seattle show, still pours cheap and reliable drinks with live music most nights." },
+    { name: "Central Saloon", hood: "Pioneer Square" },
     // West Seattle
-    { name: "Poggie Tavern", hood: "West Seattle", price: "$$", vibe: "A West Seattle neighborhood tavern with a friendly, regulars-first feel." },
+    { name: "Poggie Tavern", hood: "West Seattle" },
     // South Park
-    { name: "Loretta's Northwesterner", hood: "South Park", price: "$", vibe: "A South Park institution known for its burger, plush booths, and beers under $5 — plus a hidden back patio." },
+    { name: "Loretta's Northwesterner", hood: "South Park" },
     // Madison Park
-    { name: "Red Onion Tavern", hood: "Madison Park", price: "$$", vibe: "A Madison Park neighborhood tavern with a slightly more polished, upscale-adjacent feel." },
+    { name: "Red Onion Tavern", hood: "Madison Park" },
     // Ravenna/Roosevelt
-    { name: "The Duchess Tavern", hood: "Ravenna/Roosevelt", price: "$$", vibe: "A Ravenna/Roosevelt neighborhood tavern, casual and unfussy." },
-    // New additions — see new-venues-draft.md for verification notes.
-    // Ballard
-    { name: "Kangaroo & Kiwi", hood: "Ballard", price: "$", vibe: "An Australian-themed pub in a converted Carnegie library — meat pies, footy on the screens, and regular trivia nights." },
-    { name: "Lock & Keel Tavern", hood: "Ballard", price: "$", vibe: "A nautical-themed dive that calls itself \"Ballard Avenue's most regular of watering holes\" — and it earns it." },
-    { name: "Rough & Tumble (Ballard)", hood: "Ballard", price: "$$", vibe: "Seattle's first women's sports bar — 18 screens, craft beer, and a genuinely great place to watch any game." },
-    // Capitol Hill
-    { name: "Montana", hood: "Capitol Hill", price: "$", vibe: "A Capitol Hill dive that pioneered cocktails on tap — casual, a little scuffed up, very Seattle." },
-    // Belltown
-    { name: "Shorty's", hood: "Belltown", price: "$", vibe: "A Coney-Island-themed pinball dive with clown decor and hot dogs since 1997 — a Belltown icon." },
-    // Columbia City
-    { name: "Rough & Tumble (Columbia City)", hood: "Columbia City", price: "$$", vibe: "The Columbia City outpost of Seattle's women's sports bar — big screens, full bar, real community energy." },
-    // Greenwood
-    { name: "Baranof", hood: "Greenwood", price: "$", vibe: "A Greenwood nautical dive that also serves breakfast — karaoke, pool, and a devoted neighborhood following." },
-    // Magnolia
-    { name: "Boxcar Ale House", hood: "Magnolia", price: "$", vibe: "A beloved Magnolia dive with karaoke, a ping-pong patio, and cheap PBR — a real neighborhood hangout." }
+    { name: "The Duchess Tavern", hood: "Ravenna/Roosevelt" }
   ];
 
   // Cocktail Mode — straightforward cocktail-bar language, and its own
@@ -1214,30 +684,30 @@
   // the entrance isn't separately listed on Google Maps.
   const speakeasyVenues = [
     // Capitol Hill
-    { name: "Canon", hood: "Capitol Hill", price: "$$$", vibe: "One of the most acclaimed whiskey and cocktail bars in the country — an enormous spirits collection and serious craft." },
-    { name: "Liberty", hood: "Capitol Hill", price: "$$", vibe: "A longtime Capitol Hill cocktail bar with a relaxed, unpretentious vibe." },
-    { name: "Bait Shop", hood: "Capitol Hill", price: "$$", vibe: "A tiki-themed cocktail bar with tropical drinks and a fun, escapist vibe." },
-    { name: "The Doctor's Office", hood: "Capitol Hill", price: "$$", vibe: "A well-regarded Capitol Hill cocktail bar with a focused, craft-forward menu." },
-    { name: "Herb & Bitter Public House", hood: "Capitol Hill", price: "$$", vibe: "A Capitol Hill cocktail bar built around herbal and bitter-forward drinks — great for adventurous orders." },
-    { name: "Rumba", hood: "Capitol Hill", price: "$$", vibe: "A rum specialist with hundreds of bottles and a half-dozen styles of daiquiri — a spot of Caribbean sunshine on Capitol Hill." },
-    { name: "Inside Passage", hood: "Capitol Hill", price: "$$$", vibe: "An underwater-themed hidden speakeasy tucked behind Rumba — moody, immersive, worth the search." },
-    { name: "Needle & Thread", hood: "Capitol Hill", mapName: "Tavern Law", price: "$$$", vibe: "A hidden speakeasy accessed through Tavern Law — one of Seattle's original craft cocktail destinations." },
+    { name: "Canon", hood: "Capitol Hill" },
+    { name: "Liberty", hood: "Capitol Hill" },
+    { name: "Bait Shop", hood: "Capitol Hill" },
+    { name: "The Doctor's Office", hood: "Capitol Hill" },
+    { name: "Herb & Bitter Public House", hood: "Capitol Hill" },
+    { name: "Rumba", hood: "Capitol Hill" },
+    { name: "Inside Passage", hood: "Capitol Hill" },
+    { name: "Needle & Thread", hood: "Capitol Hill", mapName: "Tavern Law" },
     // Ballard
-    { name: "Percy's & Co.", hood: "Ballard", price: "$$", vibe: "A stylish Ballard cocktail bar with a well-crafted, seasonal drink menu." },
-    { name: "Essex", hood: "Ballard", price: "$$", vibe: "A cozy Ballard cocktail lounge, good for a quieter night out." },
-    { name: "Baker's", hood: "Ballard", price: "$$", vibe: "A Ballard cocktail bar with a loyal following that rallied to keep it open." },
+    { name: "Percy's & Co.", hood: "Ballard" },
+    { name: "Essex", hood: "Ballard" },
+    { name: "Baker's", hood: "Ballard" },
     // Belltown
-    { name: "Rob Roy", hood: "Belltown", price: "$$$", vibe: "A long-running, highly regarded Belltown cocktail bar — a Seattle classic for serious drinks." },
-    { name: "Roquette", hood: "Belltown", price: "$$", vibe: "A Belltown cocktail bar with a creative, well-executed menu." },
-    { name: "Bathtub Gin & Co.", hood: "Belltown", price: "$$$", vibe: "A speakeasy-style Belltown cocktail bar with a moody, intimate feel." },
+    { name: "Rob Roy", hood: "Belltown" },
+    { name: "Roquette", hood: "Belltown" },
+    { name: "Bathtub Gin & Co.", hood: "Belltown" },
     // Queen Anne
-    { name: "Rich Rich", hood: "Queen Anne", price: "$$", vibe: "A stylish Queen Anne cocktail bar with a playful, photogenic vibe." },
+    { name: "Rich Rich", hood: "Queen Anne" },
     // Fremont
-    { name: "Stampede Cocktail Club", hood: "Fremont", price: "$$", vibe: "A Fremont cocktail club with a fun, high-energy atmosphere." },
+    { name: "Stampede Cocktail Club", hood: "Fremont" },
     // Greenwood
-    { name: "Dark Room", hood: "Greenwood", price: "$$", vibe: "A moody Greenwood cocktail bar earning recent local press for its craft and atmosphere." },
+    { name: "Dark Room", hood: "Greenwood" },
     // Pioneer Square
-    { name: "Dead Line", hood: "Pioneer Square", price: "$$", vibe: "A Pioneer Square cocktail bar with a sleek, modern take on the neighborhood's historic bones." }
+    { name: "Dead Line", hood: "Pioneer Square" }
   ];
 
   // Upcoming Mode — real, dated Seattle-area events where you can plausibly
@@ -1321,130 +791,69 @@
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  // Two arrays contain the exact same set of venue objects (order doesn't
+  // matter) — used below to tell whether a venue pool's composition changed
+  // since the last draw (only really possible for Upcoming mode, whose pool
+  // is date-filtered and could shift if a session runs across a weekend
+  // boundary) versus just being a fresh array instance wrapping the same
+  // venues, which `computeUpcomingPool()` returns on every call even when
+  // nothing actually changed.
+  function sameVenueSet(a, b) {
+    if (!a || a.length !== b.length) return false;
+    for (let i = 0; i < b.length; i++) {
+      if (a.indexOf(b[i]) === -1) return false;
+    }
+    return true;
+  }
+
+  // No-repeat "shuffle bag" per venue pool, keyed by `key` (not by mode) —
+  // Degenerate and Low-Key draw from the exact same 30-venue list, so they
+  // share a key and a bag: switching between those two modes shouldn't
+  // un-stick a bar that just came up, since it's still the same physical
+  // bar either way. Cocktail and Upcoming get their own keys/bags since
+  // they draw from entirely different venue lists. Hands back venues in a
+  // random order with no repeats until every venue in the pool has been
+  // drawn once, then reshuffles a fresh bag — and nudges away from letting
+  // that reshuffle immediately repeat the venue that just finished the
+  // previous bag, so exhausting the list doesn't produce two back-to-back
+  // picks of the same bar right at the seam. Resets on page reload (this
+  // state is in-memory only, not persisted) and whenever a pool's actual
+  // contents change (via sameVenueSet above).
+  const venueDrawState = {};
+  function drawVenue(key, pool) {
+    if (pool.length <= 1) return pool[0];
+    let state = venueDrawState[key];
+    if (!state || !sameVenueSet(state.pool, pool)) {
+      state = { pool: pool, remaining: shuffle(pool), lastDrawn: null };
+      venueDrawState[key] = state;
+    }
+    if (state.remaining.length === 0) {
+      const fresh = shuffle(pool);
+      if (fresh[fresh.length - 1] === state.lastDrawn) {
+        const swapIdx = Math.floor(Math.random() * (fresh.length - 1));
+        const tmp = fresh[fresh.length - 1];
+        fresh[fresh.length - 1] = fresh[swapIdx];
+        fresh[swapIdx] = tmp;
+      }
+      state.remaining = fresh;
+    }
+    const drawn = state.remaining.pop();
+    state.lastDrawn = drawn;
+    return drawn;
+  }
+
   let lastAnswer = '';
 
   let mode = 'degenerate';
-
-  // --- Personalization state (session-only — see the onboarding modal and
-  // Refine panel below) -----------------------------------------------
-  // None of this persists across a page reload: this file is published
-  // both as a claude.ai artifact (where localStorage/sessionStorage aren't
-  // supported) and as a standalone download, and keeping both copies
-  // behaviorally identical mattered more than persistence here. Flagged as
-  // a backlog item if that trade-off ever needs revisiting.
-  let groupSize = null;          // 'solo' | 'duo' | 'small' | 'crowd' | null
-  let groupComposition = null;   // 'guys' | 'mixed' | 'girls' | 'couple' | null
-  // Both now feed buildCompanionClause() below, which replaces the old
-  // fixed " with " + pick(crews) tail — see crew-wording-draft.md for the
-  // design (size picks sentence structure, composition picks word family).
-  const FIXED_CITY = 'Seattle, WA'; // hardcoded until multi-city actually ships
-  let selectedNeighborhood = null; // null = "Anywhere"; '__remote__' = the pinned "surprise me" option; otherwise a literal hood string
-  let priceSensitive = false;      // captured, but not yet wired to real filtering — no per-venue price-tier data exists yet
-  let rerollStreak = 0;
-  let nudgeDismissedThisStreak = false;
-  const REROLL_NUDGE_THRESHOLD = 3;
-
-  // Neighborhoods with this many venues or fewer count as "remote" for the
-  // pinned "Surprise me (remote)" option — a simple, data-derived stand-in
-  // for "hidden gem" rather than a hand-curated list.
-  const REMOTE_HOOD_MAX_COUNT = 1;
-
-  // Returns [{ hood, count }] for a venue pool, sorted by count descending.
-  // Upcoming-mode events don't carry a comparable `hood` field, so this is
-  // only meaningful for the three hood-based venue lists.
-  function neighborhoodCounts(venuePool) {
-    const counts = {};
-    venuePool.forEach(function (v) {
-      if (!v.hood) return;
-      counts[v.hood] = (counts[v.hood] || 0) + 1;
-    });
-    return Object.keys(counts)
-      .map(function (hood) { return { hood: hood, count: counts[hood] }; })
-      .sort(function (a, b) { return b.count - a.count; });
-  }
-
-  // Applies the current neighborhood selection to a venue pool. Falls back
-  // to the unfiltered pool if the filter would leave nothing to pick from
-  // (e.g. a neighborhood picked in one mode doesn't exist in another) —
-  // graceful degradation over a dead end.
-  function applyNeighborhoodFilter(venuePool) {
-    if (!selectedNeighborhood) return venuePool;
-    let filtered;
-    if (selectedNeighborhood === '__remote__') {
-      const counts = neighborhoodCounts(venuePool);
-      const remoteHoods = counts.filter(function (c) { return c.count <= REMOTE_HOOD_MAX_COUNT; }).map(function (c) { return c.hood; });
-      filtered = venuePool.filter(function (v) { return remoteHoods.indexOf(v.hood) !== -1; });
-    } else {
-      filtered = venuePool.filter(function (v) { return v.hood === selectedNeighborhood; });
-    }
-    if (filtered.length === 0) {
-      console.warn('Weekend Activity Ball: neighborhood filter matched nothing for this mode, ignoring it for this roll');
-      return venuePool;
-    }
-    return filtered;
-  }
-
-  // Applies "Keep it cheap" ($ only) to a venue pool. Same graceful-
-  // fallback shape as applyNeighborhoodFilter — if a venue lacks a price
-  // tag for some reason, or the filter would leave nothing, don't produce
-  // a dead end. Not applied in Cocktail mode at all (see the Refine panel
-  // toggle, hidden there) or Upcoming mode (events have no price tag).
-  function applyPriceFilter(venuePool) {
-    if (!priceSensitive) return venuePool;
-    const filtered = venuePool.filter(function (v) { return v.price === '$'; });
-    if (filtered.length === 0) {
-      console.warn('Weekend Activity Ball: price filter matched nothing for this mode, ignoring it for this roll');
-      return venuePool;
-    }
-    return filtered;
-  }
-
-  // --- "Why this pick" description ---------------------------------------
-  // Combines the venue's static vibe blurb with a short, templated sentence
-  // reflecting whatever Refine/onboarding state is actually active right
-  // now. This is static content (each vibe blurb is fixed, hand-written —
-  // see the venue arrays above) plus simple string assembly, not a live
-  // AI call: real per-venue commentary without adding network dependency,
-  // latency, or ongoing cost to the core tap-to-roll loop. See the backlog
-  // for the fuller reasoning behind that trade-off.
-  const groupSizeFitPhrase = {
-    solo: "perfect for a solo mission",
-    duo: "great for just the two of you",
-    small: "a solid fit for a small crew",
-    crowd: "got plenty of room for a big group"
-  };
-
-  function buildFitReason(venueHood) {
-    const reasons = [];
-    if (selectedNeighborhood === '__remote__') {
-      reasons.push('a bit off the beaten path, like you wanted');
-    } else if (selectedNeighborhood) {
-      reasons.push('right in ' + venueHood);
-    }
-    // Same mode guard as refreshRefineChipLabel — don't cite "cheap" as a
-    // reason while the toggle itself is hidden (Cocktail mode).
-    if (priceSensitive && mode !== 'cocktail') reasons.push('easy on the wallet');
-    if (groupSize && groupSizeFitPhrase[groupSize]) reasons.push(groupSizeFitPhrase[groupSize]);
-
-    if (reasons.length === 0) return '';
-    let joined;
-    if (reasons.length === 1) joined = reasons[0];
-    else if (reasons.length === 2) joined = reasons[0] + ' and ' + reasons[1];
-    else joined = reasons.slice(0, -1).join(', ') + ', and ' + reasons[reasons.length - 1];
-    return "Picked because it's " + joined + '.';
-  }
-
-  // Renders the vibe blurb + fit reason into the #venueWhy element, or
-  // hides it entirely if the venue has no vibe data (legacy links from
-  // before this feature, or Upcoming-mode events).
-  function renderVenueWhy(venue) {
-    const el = document.getElementById('venueWhy');
-    if (!el) return;
-    if (!venue || !venue.vibe) { el.hidden = true; el.textContent = ''; return; }
-    const fitReason = buildFitReason(venue.hood);
-    el.textContent = venue.vibe + (fitReason ? ' ' + fitReason : '');
-    el.hidden = false;
-  }
 
   // Returns { text, venue } — the venue object travels alongside the answer
   // text so the caller can show its neighborhood/date and a map link for it.
@@ -1452,65 +861,40 @@
   // weekend (the mode button should be disabled in that case, but ask()
   // guards against it too).
   function nextAnswer() {
-    let verbPool, amountPool, venuePool;
+    let verbPool, amountPool, venuePool, poolKey;
     if (mode === 'lowkey') {
-      verbPool = lowKeyVerbs; amountPool = lowKeyAmounts; venuePool = venues;
+      verbPool = lowKeyVerbs; amountPool = lowKeyAmounts; venuePool = venues; poolKey = 'venues';
     } else if (mode === 'cocktail') {
-      verbPool = cocktailVerbs; amountPool = cocktailAmounts; venuePool = speakeasyVenues;
+      verbPool = cocktailVerbs; amountPool = cocktailAmounts; venuePool = speakeasyVenues; poolKey = 'cocktail';
     } else if (mode === 'upcoming') {
-      verbPool = verbs; amountPool = amounts; venuePool = computeUpcomingPool();
+      verbPool = verbs; amountPool = amounts; venuePool = computeUpcomingPool(); poolKey = 'upcoming';
     } else {
-      verbPool = verbs; amountPool = amounts; venuePool = venues;
+      verbPool = verbs; amountPool = amounts; venuePool = venues; poolKey = 'venues';
     }
-
-    // A solo roll quietly borrows Low-Key's tamer amounts on Degenerate/
-    // Upcoming specifically — "an ungodly number of beers" recommended to
-    // one person alone reads differently than the same line aimed at a
-    // group. Low-Key mode is already tame, and Cocktail mode's amounts
-    // are already modest, so neither needs (or should get) this swap —
-    // forcing beer-language onto Cocktail's speakeasy venues would just
-    // produce nonsense ("a beer" at a martini bar).
-    if (groupSize === 'solo' && (mode === 'degenerate' || mode === 'upcoming')) {
-      verbPool = lowKeyVerbs; amountPool = lowKeyAmounts;
-    }
-
-    // "A round of X" is a genuine grammatical mismatch for a solo roll —
-    // you can't buy yourself a round — not just a hyperbole question like
-    // the beer/pitcher quantities elsewhere, so this is excluded
-    // regardless of tone. Scoped to Cocktail mode since it's the only pool
-    // with "round of" phrasing today.
-    if (mode === 'cocktail' && groupSize === 'solo') {
-      const soloFriendly = amountPool.filter(function (a) { return a.indexOf('a round of') === -1; });
-      if (soloFriendly.length > 0) amountPool = soloFriendly;
-    }
-
-    if (mode !== 'upcoming') venuePool = applyNeighborhoodFilter(venuePool);
-    // "Keep it cheap" only applies where price tags exist and the toggle
-    // is actually reachable — Degenerate/Low-Key. Cocktail's toggle is
-    // hidden entirely (see updatePriceToggleVisibility) since no venue
-    // there is realistically "$"; Upcoming events have no price tag.
-    if (mode === 'degenerate' || mode === 'lowkey') venuePool = applyPriceFilter(venuePool);
 
     if (venuePool.length === 0) {
       return { text: "Nothing drink-worthy on the calendar this weekend — check back soon.", venue: null };
     }
 
+    // Exactly one venue draw per roll — the venue stays fixed for this roll
+    // even if the verb/amount/crew retry loop below runs more than once, so
+    // a single "Ask the Ball" tap never burns through more than one venue
+    // from the no-repeat bag.
+    const venue = drawVenue(poolKey, venuePool);
+
     let text;
-    let venue, verb, amount, crew;
+    let verb, amount, crew;
     let attempts = 0;
     do {
-      venue = pick(venuePool);
       verb = pick(verbPool);
       amount = pick(amountPool);
-      crew = pickCompanionWord();
-      text = verb + ' ' + amount + ' at ' + venue.name + (crew ? ' with ' + crew : '') + '.';
+      crew = pick(crews);
+      text = verb + ' ' + amount + ' at ' + venue.name + ' with ' + crew + '.';
       attempts++;
-    } while (text === lastAnswer && attempts < 6);
+    } while (text === lastAnswer && attempts < 6 && (amountPool.length * crews.length * verbPool.length > 1));
     lastAnswer = text;
     // verb/amount/crew travel alongside text/venue so a deep link can encode
     // exactly this roll and reproduce it verbatim later (see buildShareUrl).
-    // crew may be '' for a solo roll — buildShareUrlLegacy/hydrateFromUrlLegacy
-    // both handle that as "no companion clause" rather than a broken " with ."
     return { text: text, venue: venue, verb: verb, amount: amount, crew: crew };
   }
 
@@ -1688,12 +1072,12 @@
   const SHARE_BASE_URL = 'https://wolfgang425.github.io/weekend-activity-ball/';
 
   // Encodes one specific roll (mode + verb + amount + crew + which venue)
-  // as query params on the app's own URL. This is the ORIGINAL, pre-Firebase
-  // scheme — kept only so links already shared before this change keep
-  // working, and as a fallback if writing a live roll doc to Firestore
-  // fails (e.g. the visitor is offline). Links built this way have no live
-  // "who's in" list, since there's no shared doc backing them.
-  function buildShareUrlLegacy(venue, verb, amount, crew) {
+  // as query params on the app's own URL. Loading that URL re-renders this
+  // exact result via hydrateFromUrl() instead of asking the ball fresh —
+  // pure client-side string building, no backend involved. Upcoming-mode
+  // events also carry rangeStart since their `name` alone isn't unique
+  // (e.g. multiple "the Mariners game" entries on different dates).
+  function buildShareUrl(venue, verb, amount, crew) {
     const params = new URLSearchParams();
     params.set('m', mode);
     params.set('v', verb);
@@ -1702,85 +1086,6 @@
     params.set('vn', venue.name);
     if (mode === 'upcoming' && venue.rangeStart) params.set('vd', venue.rangeStart);
     return SHARE_BASE_URL + '?' + params.toString();
-  }
-
-  // Current share-link scheme: one Firestore document per roll, referenced
-  // by its doc ID as a single `r` param. Loading that URL fetches the doc
-  // and subscribes to it live, so everyone who opens the link watches the
-  // same "who's in" list update in real time (see createRollDoc/
-  // subscribeToRoll below) — the one thing the old pure-URL scheme could
-  // never do on its own.
-  function buildShareUrl(rollId) {
-    return SHARE_BASE_URL + '?r=' + encodeURIComponent(rollId);
-  }
-
-  // Writes a new roll to Firestore so it can carry a live RSVP list.
-  // Stores enough to re-render the result (mode/verb/amount/crew/venue
-  // name, plus rangeStart for Upcoming-mode venues whose name alone isn't
-  // unique) without needing anything beyond the venue name + mode later.
-  // Returns the new doc's ID, or throws if Firestore can't be reached —
-  // callers fall back to buildShareUrlLegacy in that case.
-  //
-  // No expiration field on these docs — Firestore's native TTL policy
-  // feature turned out to require a linked Blaze billing account just to
-  // configure (a management-plane gate, not an actual usage cost), which
-  // was an explicit no-go. See the backlog for the parked cleanup options.
-  async function createRollDoc(result, currentMode) {
-    const payload = {
-      mode: currentMode,
-      verb: result.verb,
-      amount: result.amount,
-      crew: result.crew,
-      venueName: result.venue.name,
-      venueDate: (currentMode === 'upcoming' && result.venue.rangeStart) ? result.venue.rangeStart : null,
-      text: result.text,
-      createdAt: serverTimestamp(),
-      rsvps: []
-    };
-    const ref = await addDoc(collection(db, ROLLS_COLLECTION), payload);
-    return ref.id;
-  }
-
-  let unsubscribeRsvp = null;
-
-  // Live-subscribes to a roll doc's `rsvps` array and re-renders the
-  // "who's in" list on every change — this is what makes the RSVP list
-  // shared rather than local. Replaces any previous subscription so a
-  // fresh roll (or leaving a shared view) doesn't keep listening to a
-  // stale doc in the background.
-  function subscribeToRoll(rollId) {
-    if (unsubscribeRsvp) { unsubscribeRsvp(); unsubscribeRsvp = null; }
-    const ref = doc(db, ROLLS_COLLECTION, rollId);
-    unsubscribeRsvp = onSnapshot(ref, function (snap) {
-      if (!snap.exists()) return;
-      renderRsvpList(snap.data().rsvps || []);
-    }, function (err) {
-      console.error('Weekend Activity Ball: RSVP live update failed', err);
-    });
-  }
-
-  function renderRsvpList(rsvps) {
-    const targets = [document.getElementById('rsvpList'), document.getElementById('rsvpListConfirm')];
-    const names = rsvps.map(function (r) { return r.name; }).filter(Boolean);
-    targets.forEach(function (el) {
-      if (!el) return;
-      if (!names.length) {
-        el.hidden = true;
-        el.textContent = '';
-        return;
-      }
-      el.hidden = false;
-      el.innerHTML = '<strong>In:</strong> ' + names.map(rsvpEscapeHtml).join(', ');
-    });
-  }
-
-  // Minimal HTML-escaping for names before they go into innerHTML above —
-  // names are free-text a stranger typed into a prompt(), so they must be
-  // escaped before display even though this is a low-stakes, no-login app.
-  function rsvpEscapeHtml(text) {
-    return String(text)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   const ball = document.getElementById('ball');
@@ -1843,13 +1148,6 @@
       o.setAttribute('aria-selected', String(isActive));
     });
     modeDropdownLabel.textContent = modeLabels[mode];
-    // Each mode has its own venue pool, so a neighborhood picked in one
-    // mode may not exist in another — reset rather than carry over a
-    // selection that could silently stop matching anything.
-    selectedNeighborhood = null;
-    renderNeighborhoodOptions();
-    updatePriceToggleVisibility();
-    refreshRefineChipLabel();
   }
 
   function openDropdown() {
@@ -1899,224 +1197,6 @@
     if (!modeDropdown.contains(e.target) && !modeDropdownList.hidden) closeDropdown(false);
   });
 
-  // --- Onboarding modal (city / group size / composition) ---------------
-  const onboardingModal = document.getElementById('onboardingModal');
-  const notInSeattleLink = document.getElementById('notInSeattleLink');
-  const cityNote = document.getElementById('cityNote');
-  const groupSizeGrid = document.getElementById('groupSizeGrid');
-  const groupCompGrid = document.getElementById('groupCompGrid');
-  const onboardingContinueBtn = document.getElementById('onboardingContinueBtn');
-  const onboardingSkipLink = document.getElementById('onboardingSkipLink');
-
-  function openOnboarding() {
-    onboardingModal.classList.add('visible');
-  }
-  function closeOnboarding() {
-    onboardingModal.classList.remove('visible');
-  }
-
-  notInSeattleLink.addEventListener('click', function () {
-    // Only Seattle exists today — an honest answer rather than a picker
-    // with nowhere to go. Becomes a real city switcher once multi-city
-    // support actually ships.
-    cityNote.hidden = false;
-  });
-
-  function wirePillGrid(grid, onSelect) {
-    Array.from(grid.querySelectorAll('.pill-btn')).forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        const alreadySelected = btn.classList.contains('selected');
-        Array.from(grid.querySelectorAll('.pill-btn')).forEach(function (b) { b.classList.remove('selected'); });
-        if (!alreadySelected) {
-          btn.classList.add('selected');
-          onSelect(btn.dataset.value);
-        } else {
-          onSelect(null); // tapping the selected pill again clears it
-        }
-      });
-    });
-  }
-  wirePillGrid(groupSizeGrid, function (value) { groupSize = value; });
-  wirePillGrid(groupCompGrid, function (value) { groupComposition = value; });
-
-  onboardingContinueBtn.addEventListener('click', function () {
-    closeOnboarding();
-    renderSetupSummary();
-    refreshRefineChipLabel();
-  });
-  onboardingSkipLink.addEventListener('click', function () {
-    // Skip leaves groupSize/groupComposition at null — today's exact
-    // experience, nothing assumed.
-    closeOnboarding();
-    renderSetupSummary();
-  });
-
-  const setupSizeLabels = { solo: 'Just me', duo: 'Me + 1', small: 'A few of us', crowd: 'The whole gang' };
-  const setupCompLabels = { guys: 'Guys', mixed: 'Mixed', girls: 'Girls', couple: 'Couple' };
-
-  function renderSetupSummary() {
-    const setupSummary = document.getElementById('setupSummary');
-    if (!setupSummary) return;
-    const chips = ['<span class="setup-chip">📍 ' + FIXED_CITY.replace(', WA', '') + '</span>'];
-    chips.push('<span class="setup-chip">' + (groupSize ? setupSizeLabels[groupSize] : 'Group size not set') + '</span>');
-    chips.push('<span class="setup-chip">' + (groupComposition ? setupCompLabels[groupComposition] : 'Who\'s out not set') + '</span>');
-    chips.push('<button class="setup-edit-link" type="button" id="setupEditLink">Edit</button>');
-    setupSummary.innerHTML = chips.join('');
-    const editLink = document.getElementById('setupEditLink');
-    if (editLink) editLink.addEventListener('click', openOnboarding);
-  }
-
-  // --- Refine panel (neighborhood + price) -------------------------------
-  const refineChipBtn = document.getElementById('refineChipBtn');
-  const refinePanel = document.getElementById('refinePanel');
-  const neighborhoodSelect = document.getElementById('neighborhoodSelect');
-  const priceToggle = document.getElementById('priceToggle');
-  const NEIGHBORHOOD_VISIBLE_CAP = 5;
-
-  refineChipBtn.addEventListener('click', function () {
-    const isHidden = refinePanel.hidden;
-    refinePanel.hidden = !isHidden;
-    refineChipBtn.setAttribute('aria-expanded', String(isHidden));
-    if (isHidden) {
-      // Opening Refine to actually adjust something is the same "this
-      // pool isn't working" signal a share/commit is — reset the nudge.
-      rerollStreak = 0;
-      nudgeDismissedThisStreak = false;
-      hideNudge();
-    }
-  });
-
-  function currentModeVenuePool() {
-    if (mode === 'lowkey') return venues;
-    if (mode === 'cocktail') return speakeasyVenues;
-    if (mode === 'upcoming') return [];
-    return venues;
-  }
-
-  const priceToggleRow = document.getElementById('priceToggleRow');
-  const cocktailPriceNote = document.getElementById('cocktailPriceNote');
-
-  // No Cocktail venue is realistically "$" (craft cocktails run $14-18
-  // citywide regardless of venue tier), so the toggle is hidden there
-  // entirely rather than offering a filter that can never match anything
-  // meaningfully different. The underlying priceSensitive value is left
-  // untouched — it just doesn't apply while Cocktail is active (see the
-  // mode guard in nextAnswer()) and reappears if the user switches back.
-  function updatePriceToggleVisibility() {
-    const isCocktail = mode === 'cocktail';
-    priceToggleRow.hidden = isCocktail;
-    cocktailPriceNote.hidden = !isCocktail;
-  }
-
-  function renderNeighborhoodOptions() {
-    if (!neighborhoodSelect) return;
-    if (mode === 'upcoming') {
-      neighborhoodSelect.innerHTML = '<span class="hood-chip selected">Not available in Upcoming mode</span>';
-      return;
-    }
-    const counts = neighborhoodCounts(currentModeVenuePool());
-    const visible = counts.slice(0, NEIGHBORHOOD_VISIBLE_CAP);
-    const overflow = counts.slice(NEIGHBORHOOD_VISIBLE_CAP);
-
-    function chipHtml(hood, count, extraClass) {
-      const isSelected = selectedNeighborhood === hood;
-      return '<button class="hood-chip' + (extraClass ? ' ' + extraClass : '') + (isSelected ? ' selected' : '') +
-        '" type="button" data-hood="' + hood.replace(/"/g, '&quot;') + '">' + hood + ' <em>(' + count + ')</em></button>';
-    }
-
-    let html = '<button class="hood-chip' + (selectedNeighborhood === null ? ' selected' : '') + '" type="button" data-hood="">Anywhere</button>';
-    visible.forEach(function (c) { html += chipHtml(c.hood, c.count); });
-    if (overflow.length > 0) {
-      html += '<button class="hood-more-label" type="button" id="hoodMoreBtn">+' + overflow.length + ' more ▾</button>';
-      overflow.forEach(function (c) { html += chipHtml(c.hood, c.count, 'hood-overflow'); });
-    }
-    html += '<button class="hood-pinned' + (selectedNeighborhood === '__remote__' ? ' selected' : '') + '" type="button" data-hood="__remote__">Surprise me (remote) ✨</button>';
-    neighborhoodSelect.innerHTML = html;
-
-    // Overflow chips stay hidden until "+N more" is tapped.
-    Array.from(neighborhoodSelect.querySelectorAll('.hood-overflow')).forEach(function (el) { el.hidden = true; });
-    const moreBtn = document.getElementById('hoodMoreBtn');
-    if (moreBtn) {
-      moreBtn.addEventListener('click', function () {
-        const expanded = moreBtn.dataset.expanded === 'true';
-        moreBtn.dataset.expanded = String(!expanded);
-        moreBtn.textContent = expanded ? ('+' + overflow.length + ' more ▾') : 'Show less ▲';
-        Array.from(neighborhoodSelect.querySelectorAll('.hood-overflow')).forEach(function (el) { el.hidden = expanded; });
-      });
-    }
-
-    Array.from(neighborhoodSelect.querySelectorAll('[data-hood]')).forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        const value = chip.dataset.hood;
-        selectedNeighborhood = value === '' ? null : value;
-        renderNeighborhoodOptions();
-        refreshRefineChipLabel();
-      });
-    });
-  }
-
-  priceToggle.addEventListener('click', function () {
-    priceSensitive = !priceSensitive;
-    priceToggle.classList.toggle('on', priceSensitive);
-    priceToggle.setAttribute('aria-checked', String(priceSensitive));
-    refreshRefineChipLabel();
-  });
-  priceToggle.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); priceToggle.click(); }
-  });
-
-  const refineChipLabel = document.getElementById('refineChipLabel');
-
-  function refreshRefineChipLabel() {
-    const parts = [];
-    if (selectedNeighborhood === '__remote__') parts.push('✨ Remote');
-    else if (selectedNeighborhood) parts.push('📍 ' + selectedNeighborhood);
-    // Don't surface a "Cheap" summary while the toggle itself is hidden
-    // (Cocktail mode) — the underlying value is preserved, just not shown
-    // or applied until the user's back in a mode where it's reachable.
-    if (priceSensitive && mode !== 'cocktail') parts.push('💰 Cheap');
-    if (parts.length > 0) {
-      refineChipLabel.textContent = parts.join(' · ');
-      refineChipBtn.classList.add('active');
-    } else {
-      refineChipLabel.textContent = '⚙ Refine';
-      refineChipBtn.classList.remove('active');
-    }
-  }
-
-  // --- Reroll nudge --------------------------------------------------
-  const rerollNudge = document.getElementById('rerollNudge');
-  const nudgeDismissBtn = document.getElementById('nudgeDismissBtn');
-  const nudgeRefineBtn = document.getElementById('nudgeRefineBtn');
-
-  function hideNudge() { rerollNudge.hidden = true; }
-  function maybeShowNudge() {
-    if (nudgeDismissedThisStreak) return;
-    if (rerollStreak >= REROLL_NUDGE_THRESHOLD) rerollNudge.hidden = false;
-  }
-  nudgeDismissBtn.addEventListener('click', function () {
-    nudgeDismissedThisStreak = true;
-    hideNudge();
-  });
-  nudgeRefineBtn.addEventListener('click', function () {
-    hideNudge();
-    rerollStreak = 0;
-    nudgeDismissedThisStreak = false;
-    refinePanel.hidden = false;
-    refineChipBtn.setAttribute('aria-expanded', 'true');
-  });
-
-  // Initial render + first-visit onboarding. Skipped when arriving via a
-  // shared link (either scheme) — someone opening a friend's roll wants to
-  // see that result immediately, not a setup screen first.
-  renderNeighborhoodOptions();
-  updatePriceToggleVisibility();
-  renderSetupSummary();
-  refreshRefineChipLabel();
-  const arrivingViaSharedLink = new URLSearchParams(window.location.search).get('r') ||
-    new URLSearchParams(window.location.search).get('m');
-  if (!arrivingViaSharedLink) openOnboarding();
-
   for (let i = 0; i < 10; i++) {
     const b = document.createElement('div');
     b.className = 'bubble';
@@ -2139,20 +1219,20 @@
   function playShakeSound() {
     const ctx = getCtx();
     const now = ctx.currentTime;
-    const thumps = 11; // fewer, slower, deeper thumps spread across ~2.3s
+    const thumps = 7;
     for (let i = 0; i < thumps; i++) {
-      const t = now + i * 0.21 + Math.random() * 0.03;
+      const t = now + i * 0.11 + Math.random() * 0.02;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(70 + Math.random() * 30, t);
-      osc.frequency.exponentialRampToValueAtTime(40, t + 0.14);
+      osc.frequency.setValueAtTime(90 + Math.random() * 40, t);
+      osc.frequency.exponentialRampToValueAtTime(50, t + 0.08);
       gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
       osc.connect(gain).connect(ctx.destination);
       osc.start(t);
-      osc.stop(t + 0.18);
+      osc.stop(t + 0.1);
     }
   }
 
@@ -2276,7 +1356,7 @@
     ctx.shadowColor = 'rgba(0,0,0,0.55)';
     ctx.shadowBlur = 60;
     ctx.shadowOffsetY = 18;
-    ctx.fillStyle = '#0a0a0a';
+    ctx.fillStyle = '#0f0a06';
     ctx.fill();
     ctx.restore();
 
@@ -2289,10 +1369,10 @@
       ballLeft + 0.32 * (ballR * 2), ballTop + 0.28 * (ballR * 2), 0,
       ballLeft + 0.32 * (ballR * 2), ballTop + 0.28 * (ballR * 2), 502
     );
-    ballGrad.addColorStop(0, '#4a4a4a');
-    ballGrad.addColorStop(0.32, '#1c1c1c');
-    ballGrad.addColorStop(0.65, '#0a0a0a');
-    ballGrad.addColorStop(1, '#000000');
+    ballGrad.addColorStop(0, '#4a3320');
+    ballGrad.addColorStop(0.38, '#241a10');
+    ballGrad.addColorStop(0.75, '#0f0a06');
+    ballGrad.addColorStop(1, '#050302');
     ctx.fillStyle = ballGrad;
     ctx.fillRect(ballLeft, ballTop, ballR * 2, ballR * 2);
     ctx.restore();
@@ -2435,12 +1515,6 @@
     if (shareBusy) return;
     if (!shareBlob) return; // button should be disabled in this case, but be safe
 
-    // Sharing is a real "found what I wanted" signal — same as opening
-    // Refine directly (see refineChipBtn's click handler above).
-    rerollStreak = 0;
-    nudgeDismissedThisStreak = false;
-    hideNudge();
-
     shareBusy = true;
     const originalLabel = shareBtn.textContent;
     shareBtn.disabled = true;
@@ -2541,17 +1615,6 @@
   let currentCalendarInfo = null;
   let calendarObjectUrl = null;
 
-  // The Firestore doc ID backing the currently-showing roll's live RSVP
-  // list, if one exists — null when Firestore couldn't be reached and the
-  // legacy no-backend link is being used instead, or before the write for
-  // a fresh roll has finished.
-  let currentRollId = null;
-
-  // Pending debounced write for the current roll (see the reveal branch in
-  // ask()) — cleared whenever a newer roll supersedes it before it fires.
-  let rollWriteTimer = null;
-  const ROLL_WRITE_DEBOUNCE_MS = 1200;
-
   function setCalendarLinkHref(info) {
     if (calendarObjectUrl) { URL.revokeObjectURL(calendarObjectUrl); calendarObjectUrl = null; }
     if (!info) {
@@ -2600,33 +1663,9 @@
     if (!venueCalendarLink.getAttribute('href')) e.preventDefault();
   });
 
-  commitBtn.addEventListener('click', async function () {
+  commitBtn.addEventListener('click', function () {
     if (!currentCalendarInfo) return;
     downloadIcs(buildIcsBlob(currentCalendarInfo));
-    rerollStreak = 0;
-    nudgeDismissedThisStreak = false;
-    hideNudge();
-
-    // Named RSVP: ask once, in-memory only for this page load — not saved
-    // to localStorage/sessionStorage, since this file is also published as
-    // a claude.ai artifact and browser storage APIs aren't supported there.
-    // If there's no live roll doc (Firestore write failed earlier, or this
-    // is a legacy link), there's nowhere to record the RSVP, so skip
-    // straight to the confirmation panel without asking for a name.
-    if (currentRollId) {
-      const name = (window.prompt("What's your name, so the group can see you're in?") || '').trim();
-      if (name) {
-        try {
-          await updateDoc(doc(db, ROLLS_COLLECTION, currentRollId), {
-            rsvps: arrayUnion({ name: name, respondedAt: new Date().toISOString() })
-          });
-        } catch (e) {
-          console.error('Weekend Activity Ball: RSVP write failed', e);
-          shareStatus.textContent = "Added to your calendar, but couldn't record your RSVP — check your connection and try again.";
-        }
-      }
-    }
-
     showCommitConfirmation();
   });
 
@@ -2656,16 +1695,9 @@
     hint.textContent = 'Shaking...';
     shareStatus.textContent = '';
     venueMeta.classList.remove('visible');
-    renderVenueWhy(null);
     windowText.classList.remove('visible');
     windowText.classList.add('placeholder');
     windowText.textContent = '...';
-    if (unsubscribeRsvp) { unsubscribeRsvp(); unsubscribeRsvp = null; }
-    if (rollWriteTimer) { clearTimeout(rollWriteTimer); rollWriteTimer = null; }
-    currentRollId = null;
-    renderRsvpList([]);
-    rerollStreak++;
-    hideNudge();
 
     ball.classList.remove('shaking');
     void ball.offsetWidth;
@@ -2686,42 +1718,15 @@
         // "tap again" copy competing with it for the same space.
         hint.style.display = 'none';
         hint.textContent = '';
-        maybeShowNudge();
         const hoodText = hoodDisplayText(result.venue);
         venueHood.textContent = hoodText ? hoodText + ' · ' : '';
         venueMapLink.href = venueMapUrl(result.venue);
         venueMeta.classList.add('visible');
-        renderVenueWhy(result.venue);
+        prepareShareImage(result.text, buildShareUrl(result.venue, result.verb, result.amount, result.crew));
         showOwnRollActions();
         setPrimaryCta('share');
         currentCalendarInfo = buildCalendarInfo(result.venue, result.text);
         setCalendarLinkHref(currentCalendarInfo);
-        // Share works immediately off a plain (non-live) link — no need to
-        // wait on a network round trip just to enable the button. The
-        // Firestore doc that upgrades this into a LIVE-tracking link is
-        // only written after ROLL_WRITE_DEBOUNCE_MS of the ball sitting
-        // still on this result — so someone rolling through several
-        // options before picking one writes fewer throwaway docs than
-        // writing on every tap. If Share gets tapped inside that debounce
-        // window, the recipient gets a working link that just won't carry
-        // a live RSVP list.
-        currentRollId = null;
-        renderRsvpList([]);
-        prepareShareImage(result.text, buildShareUrlLegacy(result.venue, result.verb, result.amount, result.crew));
-
-        if (rollWriteTimer) clearTimeout(rollWriteTimer);
-        const capturedResult = result, capturedMode = mode;
-        rollWriteTimer = setTimeout(function () {
-          rollWriteTimer = null;
-          createRollDoc(capturedResult, capturedMode).then(function (rollId) {
-            if (mode !== capturedMode || windowText.textContent !== capturedResult.text) return; // superseded by a newer roll
-            currentRollId = rollId;
-            prepareShareImage(capturedResult.text, buildShareUrl(rollId));
-            subscribeToRoll(rollId);
-          }).catch(function (e) {
-            console.error('Weekend Activity Ball: could not create a live roll doc, sticking with the static link', e);
-          });
-        }, ROLL_WRITE_DEBOUNCE_MS);
       } else {
         // Upcoming mode came up empty (e.g. pool changed mid-session) — no
         // venue to show or share, so this is the one case that still needs
@@ -2734,133 +1739,30 @@
         setPrimaryCta('ask');
         currentCalendarInfo = null;
         setCalendarLinkHref(null);
-        if (unsubscribeRsvp) { unsubscribeRsvp(); unsubscribeRsvp = null; }
-        currentRollId = null;
-        renderRsvpList([]);
       }
 
       askBtn.disabled = false;
       askBtn.textContent = 'Ask again 🎱';
       busy = false;
-    }, 2500);
+    }, 900);
   }
 
   ballWrap.addEventListener('click', ask);
   askBtn.addEventListener('click', ask);
 
-  // Dispatches to whichever share-link scheme is present in the URL: the
-  // current Firestore-doc-backed `r` param (hydrateFromRollDoc, below), or
-  // the original param-based scheme for links shared before Firebase was
-  // added (hydrateFromUrlLegacy). Runs once on load.
+  // Reproduces a specific shared roll from URL query params (see
+  // buildShareUrl) instead of showing the "tap to ask" placeholder — so
+  // opening a shared link shows the exact result that was sent, not a
+  // fresh random one. Pure client-side: reads location.search once on
+  // load, no network call involved.
   function hydrateFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('r')) {
-      hydrateFromRollDoc(params.get('r'));
-    } else {
-      hydrateFromUrlLegacy();
-    }
-  }
-
-  // Fetches a roll doc from Firestore and renders it, then subscribes to
-  // live RSVP updates on it — so opening a shared link shows the exact
-  // result that was sent AND a live-updating "who's in" list, rather than
-  // either a fresh random roll or a static one-time snapshot.
-  async function hydrateFromRollDoc(rollId) {
-    let snap;
-    try {
-      snap = await getDoc(doc(db, ROLLS_COLLECTION, rollId));
-    } catch (e) {
-      console.error('Weekend Activity Ball: could not load shared roll', e);
-      hint.style.display = '';
-      hint.textContent = "Couldn't reach the server for that link — check your connection and try again.";
-      try { window.history.replaceState(null, '', window.location.pathname); } catch (e2) {}
-      return;
-    }
-
-    if (!snap.exists()) {
-      hint.style.display = '';
-      hint.textContent = "Couldn't find that one anymore — ask the ball for something new.";
-      try { window.history.replaceState(null, '', window.location.pathname); } catch (e2) {}
-      return;
-    }
-
-    const data = snap.data();
-    const m = data.mode;
-    if (!modeLabels[m]) return;
-
-    let venuePool;
-    if (m === 'lowkey') venuePool = venues;
-    else if (m === 'cocktail') venuePool = speakeasyVenues;
-    else if (m === 'upcoming') venuePool = upcomingEvents; // full array, same
-    // reasoning as the legacy path below — a shared link to a past event
-    // should still resolve, not just ones still "this weekend."
-    else venuePool = venues;
-
-    let venue;
-    if (m === 'upcoming') {
-      venue = venuePool.find(function (ev) { return ev.name === data.venueName && ev.rangeStart === data.venueDate; });
-    } else {
-      venue = venuePool.find(function (ven) { return ven.name === data.venueName; });
-    }
-
-    mode = m;
-    modeOptions.forEach(function (o) {
-      const isActive = o.dataset.mode === mode;
-      o.classList.toggle('active', isActive);
-      o.setAttribute('aria-selected', String(isActive));
-    });
-    modeDropdownLabel.textContent = modeLabels[mode];
-
-    const text = data.text;
-    windowText.classList.remove('placeholder');
-    windowText.textContent = text;
-    windowText.classList.add('visible');
-    lastAnswer = text;
-    askBtn.textContent = 'Ask again 🎱';
-
-    if (venue) {
-      const hoodText = hoodDisplayText(venue);
-      venueHood.textContent = hoodText ? hoodText + ' · ' : '';
-      venueMapLink.href = venueMapUrl(venue);
-      venueMeta.classList.add('visible');
-      renderVenueWhy(venue);
-      hint.style.display = 'none';
-      hint.textContent = '';
-      currentRollId = rollId;
-      prepareShareImage(text, buildShareUrl(rollId));
-      subscribeToRoll(rollId); // live "who's in" list for this shared roll
-      currentCalendarInfo = buildCalendarInfo(venue, text);
-      showSharedViewActions();
-    } else {
-      // The underlying venue/event data moved on since this was shared
-      // (e.g. pruned by a later refresh) — same graceful fallback tone as
-      // the legacy path.
-      hint.style.display = '';
-      hint.textContent = m === 'upcoming'
-        ? "That one's already come and gone — ask the ball for what's next."
-        : "Couldn't find that one anymore — ask the ball for something new.";
-      currentCalendarInfo = null;
-      currentRollId = null;
-      showOwnRollActions();
-      setPrimaryCta('ask');
-    }
-
-    try { window.history.replaceState(null, '', window.location.pathname); } catch (e) {}
-  }
-
-  // Reproduces a specific shared roll from the ORIGINAL (pre-Firebase) URL
-  // query-param scheme — kept so links shared before this change keep
-  // working. Pure client-side: reads location.search once, no network call.
-  function hydrateFromUrlLegacy() {
     const params = new URLSearchParams(window.location.search);
     const m = params.get('m');
     const v = params.get('v');
     const a = params.get('a');
     const c = params.get('c');
     const vn = params.get('vn');
-    // c can legitimately be '' for a solo roll (no companion clause) — only
-    // bail out if it's actually absent (null), not just empty.
-    if (!m || !v || !a || c === null || !vn || !modeLabels[m]) return;
+    if (!m || !v || !a || !c || !vn || !modeLabels[m]) return;
 
     let venuePool;
     if (m === 'lowkey') venuePool = venues;
@@ -2887,10 +1789,7 @@
     });
     modeDropdownLabel.textContent = modeLabels[mode];
 
-    // c may be empty for a solo roll (no companion clause) — old links
-    // always had a non-empty word here, so this only matters for links
-    // generated after composition/size wordng shipped.
-    const text = v + ' ' + a + ' at ' + vn + (c ? ' with ' + c : '') + '.';
+    const text = v + ' ' + a + ' at ' + vn + ' with ' + c + '.';
     windowText.classList.remove('placeholder');
     windowText.textContent = text;
     windowText.classList.add('visible');
@@ -2902,11 +1801,9 @@
       venueHood.textContent = hoodText ? hoodText + ' · ' : '';
       venueMapLink.href = venueMapUrl(venue);
       venueMeta.classList.add('visible');
-      renderVenueWhy(venue);
       hint.style.display = 'none';
       hint.textContent = '';
-      currentRollId = null; // no live doc backs a legacy link
-      prepareShareImage(text, buildShareUrlLegacy(venue, v, a, c));
+      prepareShareImage(text, buildShareUrl(venue, v, a, c));
       // Arriving via someone else's shared link is a different moment than
       // rolling it yourself — see showSharedViewActions() — so this branch
       // manages the action-area state directly instead of calling
