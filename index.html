@@ -636,8 +636,15 @@
   }
   .city-search-input {
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     font-family: 'Work Sans', sans-serif;
-    font-size: 0.9rem;
+    /* iOS Safari auto-zooms the whole page when a focused input/select has
+       a font-size under 16px — this was almost certainly the real cause
+       of the reported "fields outside the modal" bug on iPhone (the page
+       zooming in on focus, not an actual layout/sizing defect). 16px is
+       the documented threshold to disable that behavior. */
+    font-size: 16px;
     font-weight: 600;
     color: var(--foam);
     background: rgba(0,0,0,0.25);
@@ -1401,6 +1408,21 @@
     return { start: toDateStr(friday), end: toDateStr(sunday) };
   }
 
+  // Returns the next Friday as YYYY-MM-DD, today if today IS Friday,
+  // but NEVER a date in the past — deliberately different from
+  // upcomingWeekendRange() above, which on a Saturday/Sunday intentionally
+  // looks backward to the Friday that just started the current weekend
+  // (correct for matching whether an Upcoming-mode event is happening
+  // "this weekend," wrong for suggesting a default date to schedule
+  // something — a Sunday visitor scheduling a hangout wants next Friday,
+  // not one that already passed two days ago).
+  function nextFridayDateStr(now) {
+    const day = now.getDay(); // 0 = Sun ... 6 = Sat
+    const daysUntilFriday = (5 - day + 7) % 7;
+    const friday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilFriday);
+    return toDateStr(friday);
+  }
+
   // Events whose [rangeStart, rangeEnd] overlaps the upcoming weekend window.
   function computeUpcomingPool() {
     const range = upcomingWeekendRange(new Date());
@@ -1804,9 +1826,11 @@
       };
     }
 
-    // Degenerate / Low-Key / Cocktail — default to the nearest upcoming
-    // Friday at 7:00 PM.
-    const nearestFriday = upcomingWeekendRange(new Date()).start;
+    // Degenerate / Low-Key / Cocktail — this branch is defensive/unused
+    // today (the customizer modal handles these modes directly with the
+    // user's own chosen date/time), but kept correct in case that
+    // invariant ever changes. Defaults to the next Friday at 7:00 PM.
+    const nearestFriday = nextFridayDateStr(new Date());
     const parts = nearestFriday.split('-').map(Number);
     return {
       title: title, location: location, allDay: false,
@@ -2911,7 +2935,7 @@
     pendingCalendarText = text;
     pendingCalendarIsSharedView = isSharedView;
 
-    const defaultDate = upcomingWeekendRange(new Date()).start;
+    const defaultDate = nextFridayDateStr(new Date());
     calDateInput.value = defaultDate;
     calTimeInput.value = pad2(DEFAULT_EVENT_HOUR) + ':00';
     calDurationInput.value = String(DEFAULT_EVENT_DURATION_HOURS);
