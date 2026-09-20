@@ -316,14 +316,23 @@
 
   .venue-why[hidden] { display: none; }
 
-  a.venue-map-link {
+  a.venue-map-link,
+  button.venue-map-link {
     color: var(--amber);
     font-weight: 600;
     text-decoration: none;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: 'Work Sans', sans-serif;
+    font-size: inherit;
+    cursor: pointer;
   }
 
   a.venue-map-link:hover,
-  a.venue-map-link:focus-visible {
+  a.venue-map-link:focus-visible,
+  button.venue-map-link:hover,
+  button.venue-map-link:focus-visible {
     text-decoration: underline;
   }
 
@@ -621,26 +630,62 @@
     font-weight: 600;
     letter-spacing: 0.3px;
   }
-  .city-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  .city-search {
+    position: relative;
+    margin-bottom: 6px;
+  }
+  .city-search-input {
+    width: 100%;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--foam);
     background: rgba(0,0,0,0.25);
     border: 1px solid rgba(245,166,35,0.15);
     border-radius: 12px;
     padding: 12px 14px;
-    margin-bottom: 6px;
+    box-sizing: border-box;
   }
-  .city-row .city-name { font-size: 0.9rem; font-weight: 600; color: var(--foam); }
-  .city-row .change-link {
-    font-size: 0.75rem;
-    color: var(--amber);
-    text-decoration: underline;
+  .city-search-input::placeholder { color: var(--text-dimmer); font-weight: 500; }
+  .city-search-input:focus {
+    outline: none;
+    border-color: var(--amber-deep);
+  }
+  .city-autocomplete-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, var(--wood-1), var(--wood-3));
+    border: 1px solid rgba(245, 166, 35, 0.25);
+    border-radius: 12px;
+    padding: 6px;
+    margin: 0;
+    list-style: none;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.5);
+    z-index: 20;
+  }
+  .city-autocomplete-list[hidden] { display: none; }
+  .city-autocomplete-option {
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-size: 0.88rem;
+    font-weight: 600;
     cursor: pointer;
-    background: none;
-    border: none;
-    padding: 0;
-    font-family: 'Work Sans', sans-serif;
+  }
+  .city-autocomplete-option:hover,
+  .city-autocomplete-option.focused {
+    background: rgba(245, 166, 35, 0.12);
+    color: var(--foam);
+  }
+  .city-autocomplete-empty {
+    padding: 10px 12px;
+    color: var(--text-dimmer);
+    font-size: 0.82rem;
+    font-style: italic;
   }
   .city-note {
     font-size: 0.74rem;
@@ -648,6 +693,7 @@
     margin: 0 0 18px;
     line-height: 1.4;
   }
+  .city-note[hidden] { display: none; }
   .pill-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -937,7 +983,7 @@
     <span class="venue-hood" id="venueHood"></span>
     <a class="venue-map-link" id="venueMapLink" href="#" target="_blank" rel="noopener noreferrer">Get Directions</a>
     <span id="calendarSep"> · </span>
-    <a class="venue-map-link" id="venueCalendarLink" href="#">Add to Calendar</a>
+    <button class="venue-map-link" id="venueCalendarLink" type="button">Add to Calendar</button>
   </div>
 
   <p class="venue-why" id="venueWhy" hidden></p>
@@ -975,11 +1021,21 @@
       <p class="setup-lead">Helps pick better bars. Skip if you just want to play.</p>
 
       <div class="field-label">CITY</div>
-      <div class="city-row">
-        <span class="city-name">📍 Seattle, WA</span>
-        <button class="change-link" id="notInSeattleLink" type="button">Not in Seattle?</button>
+      <div class="city-search" id="citySearch">
+        <input
+          type="text"
+          id="cityInput"
+          class="city-search-input"
+          placeholder="Search for a city…"
+          autocomplete="off"
+          role="combobox"
+          aria-expanded="false"
+          aria-controls="cityAutocompleteList"
+          aria-autocomplete="list"
+        >
+        <ul class="city-autocomplete-list" id="cityAutocompleteList" role="listbox" hidden></ul>
       </div>
-      <p class="city-note" id="cityNote" hidden>Weekend Activity Ball is Seattle-only for now — more cities coming soon.</p>
+      <p class="city-note" id="cityNote" hidden></p>
 
       <div class="field-label">HOW MANY OF YOU?</div>
       <div class="pill-grid" id="groupSizeGrid">
@@ -1000,6 +1056,34 @@
       <div class="setup-actions">
         <button class="btn-primary" id="onboardingContinueBtn" type="button">Continue</button>
         <button class="skip-link" id="onboardingSkipLink" type="button">Skip for now</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="onboarding-modal" id="calendarModal">
+    <div class="onboarding-modal-inner">
+      <div class="setup-heading">When are you going?</div>
+      <p class="setup-lead">Tune the date, time, and length before it goes on your calendar.</p>
+
+      <div class="field-label">DATE</div>
+      <input type="date" id="calDateInput" class="city-search-input">
+
+      <div class="field-label" style="margin-top: 14px;">TIME</div>
+      <input type="time" id="calTimeInput" class="city-search-input">
+
+      <div class="field-label" style="margin-top: 14px;">HOW LONG?</div>
+      <select id="calDurationInput" class="city-search-input">
+        <option value="1">1 hour</option>
+        <option value="2">2 hours</option>
+        <option value="3">3 hours</option>
+        <option value="4">4 hours</option>
+        <option value="5">5 hours</option>
+        <option value="6">6 hours</option>
+      </select>
+
+      <div class="setup-actions" style="margin-top: 18px;">
+        <button class="btn-primary" id="calendarConfirmBtn" type="button">Add to Calendar</button>
+        <button class="skip-link" id="calendarCancelBtn" type="button">Cancel</button>
       </div>
     </div>
   </div>
@@ -1137,64 +1221,70 @@
   // itself a best-effort guess. Powers the "Keep it cheap" Refine toggle.
   const venues = [
     // Capitol Hill
-    { name: "The Comet Tavern", hood: "Capitol Hill", price: "$", vibe: "A gritty Capitol Hill dive with stiff pours and cheap canned beer — no frills, all character." },
-    { name: "Linda's Tavern", hood: "Capitol Hill", price: "$", vibe: "Capitol Hill's cowboy-themed institution, taxidermy on the walls and a killer back patio — a tallboy of Rainier is the traditional order." },
-    { name: "Captain Black's", hood: "Capitol Hill", price: "$", vibe: "A low-key Capitol Hill dive for cheap drinks and zero pretension." },
-    { name: "The Pine Box", hood: "Capitol Hill", price: "$$", vibe: "A converted mortuary with a huge beer and cocktail list — yes, there's an open standing coffin between the bathrooms." },
-    { name: "Rhein Haus", hood: "Capitol Hill", price: "$$", vibe: "A sprawling German beer hall with bocce courts, house-made sausages, and a serious draft list." },
-    { name: "Crescent Lounge", hood: "Capitol Hill", price: "$", vibe: "A beloved dive with some of the best karaoke on Capitol Hill and a colorful cast of regulars." },
+    { name: "The Comet Tavern", city: "Seattle", hood: "Capitol Hill", price: "$", vibe: "A gritty Capitol Hill dive with stiff pours and cheap canned beer — no frills, all character." },
+    { name: "Linda's Tavern", city: "Seattle", hood: "Capitol Hill", price: "$", vibe: "Capitol Hill's cowboy-themed institution, taxidermy on the walls and a killer back patio — a tallboy of Rainier is the traditional order." },
+    { name: "Captain Black's", city: "Seattle", hood: "Capitol Hill", price: "$", vibe: "A low-key Capitol Hill dive for cheap drinks and zero pretension." },
+    { name: "The Pine Box", city: "Seattle", hood: "Capitol Hill", price: "$$", vibe: "A converted mortuary with a huge beer and cocktail list — yes, there's an open standing coffin between the bathrooms." },
+    { name: "Rhein Haus", city: "Seattle", hood: "Capitol Hill", price: "$$", vibe: "A sprawling German beer hall with bocce courts, house-made sausages, and a serious draft list." },
+    { name: "Crescent Lounge", city: "Seattle", hood: "Capitol Hill", price: "$", vibe: "A beloved dive with some of the best karaoke on Capitol Hill and a colorful cast of regulars." },
     // Ballard
-    { name: "King's Hardware", hood: "Ballard", price: "$", vibe: "A no-nonsense Ballard dive with cheap drinks and a laid-back neighborhood crowd." },
-    { name: "George & Dragon Pub", hood: "Ballard", price: "$$", vibe: "A proper British pub in Ballard — pints, pub grub, and football on the telly." },
-    { name: "Hattie's Hat", hood: "Ballard", price: "$$", vibe: "A historic Ballard fixture known for its red flannel hash brunch and an old-school bar up front." },
-    { name: "Sloop Tavern", hood: "Ballard", price: "$", vibe: "A classic Ballard dive with cheap beer and no pretense." },
-    { name: "Ballard Smoke Shop", hood: "Ballard", price: "$", vibe: "Cheap cans, a well whiskey, and pull tabs — an old-school Ballard standby." },
-    { name: "Sunset Tavern", hood: "Ballard", price: "$", vibe: "A dive bar and music venue in one — cheap beer up front, live shows in the back." },
-    { name: "Macleod's Scottish Pub", hood: "Ballard", price: "$$", vibe: "A proper Scottish pub with a serious whisky list and hearty pub fare." },
-    { name: "Olaf's", hood: "Ballard", price: "$", vibe: "A cozy Ballard dive with a loyal, low-key neighborhood following." },
+    { name: "King's Hardware", city: "Seattle", hood: "Ballard", price: "$", vibe: "A no-nonsense Ballard dive with cheap drinks and a laid-back neighborhood crowd." },
+    { name: "George & Dragon Pub", city: "Seattle", hood: "Ballard", price: "$$", vibe: "A proper British pub in Ballard — pints, pub grub, and football on the telly." },
+    { name: "Hattie's Hat", city: "Seattle", hood: "Ballard", price: "$$", vibe: "A historic Ballard fixture known for its red flannel hash brunch and an old-school bar up front." },
+    { name: "Sloop Tavern", city: "Seattle", hood: "Ballard", price: "$", vibe: "A classic Ballard dive with cheap beer and no pretense." },
+    { name: "Ballard Smoke Shop", city: "Seattle", hood: "Ballard", price: "$", vibe: "Cheap cans, a well whiskey, and pull tabs — an old-school Ballard standby." },
+    { name: "Sunset Tavern", city: "Seattle", hood: "Ballard", price: "$", vibe: "A dive bar and music venue in one — cheap beer up front, live shows in the back." },
+    { name: "Macleod's Scottish Pub", city: "Seattle", hood: "Ballard", price: "$$", vibe: "A proper Scottish pub with a serious whisky list and hearty pub fare." },
+    { name: "Olaf's", city: "Seattle", hood: "Ballard", price: "$", vibe: "A cozy Ballard dive with a loyal, low-key neighborhood following." },
     // Fremont
-    { name: "Pacific Inn Pub", hood: "Fremont", price: "$", vibe: "A Fremont institution — a classic neighborhood dive with beer, flat screens, and a jukebox." },
+    { name: "Pacific Inn Pub", city: "Seattle", hood: "Fremont", price: "$", vibe: "A Fremont institution — a classic neighborhood dive with beer, flat screens, and a jukebox." },
     // Phinney Ridge
-    { name: "Tin Hat Bar & Grill", hood: "Phinney Ridge", price: "$$", vibe: "A Phinney Ridge neighborhood bar and grill with a solid tap list." },
-    { name: "Sully's Snowgoose Saloon", hood: "Phinney Ridge", price: "$", vibe: "A ski-chalet-shaped dive with a taxidermy goose watching over the bar — as Phinney Ridge as it gets." },
+    { name: "Tin Hat Bar & Grill", city: "Seattle", hood: "Phinney Ridge", price: "$$", vibe: "A Phinney Ridge neighborhood bar and grill with a solid tap list." },
+    { name: "Sully's Snowgoose Saloon", city: "Seattle", hood: "Phinney Ridge", price: "$", vibe: "A ski-chalet-shaped dive with a taxidermy goose watching over the bar — as Phinney Ridge as it gets." },
     // Queen Anne
-    { name: "Streamline Tavern", hood: "Queen Anne", price: "$", vibe: "A genuine Queen Anne dive bar — strong drinks, cheap beer, no frills." },
-    { name: "Targy's Tavern", hood: "Queen Anne", price: "$", vibe: "A neighborhood Queen Anne tavern for a low-key beer and a game on the TV." },
+    { name: "Streamline Tavern", city: "Seattle", hood: "Queen Anne", price: "$", vibe: "A genuine Queen Anne dive bar — strong drinks, cheap beer, no frills." },
+    { name: "Targy's Tavern", city: "Seattle", hood: "Queen Anne", price: "$", vibe: "A neighborhood Queen Anne tavern for a low-key beer and a game on the TV." },
     // University District
-    { name: "Blue Moon Tavern", hood: "University District", price: "$", vibe: "A University District institution since 1934 — cheap beer, a storied literary history, and a loyal crowd of regulars." },
-    { name: "College Inn Pub", hood: "University District", price: "$", vibe: "A basement pub near campus with pitchers, pool, and a rowdy Huskies-game crowd." },
+    { name: "Blue Moon Tavern", city: "Seattle", hood: "University District", price: "$", vibe: "A University District institution since 1934 — cheap beer, a storied literary history, and a loyal crowd of regulars." },
+    { name: "College Inn Pub", city: "Seattle", hood: "University District", price: "$", vibe: "A basement pub near campus with pitchers, pool, and a rowdy Huskies-game crowd." },
     // Georgetown
-    { name: "Jules Maes Saloon", hood: "Georgetown", price: "$$", vibe: "Seattle's oldest bar, reopened in 2021 after a scare — comfort food, a solid beer and cocktail list, and live music some nights." },
-    { name: "Marco Polo Bar & Grill", hood: "Georgetown", price: "$$", vibe: "A Georgetown neighborhood bar and grill, easygoing and unpretentious." },
+    { name: "Jules Maes Saloon", city: "Seattle", hood: "Georgetown", price: "$$", vibe: "Seattle's oldest bar, reopened in 2021 after a scare — comfort food, a solid beer and cocktail list, and live music some nights." },
+    { name: "Marco Polo Bar & Grill", city: "Seattle", hood: "Georgetown", price: "$$", vibe: "A Georgetown neighborhood bar and grill, easygoing and unpretentious." },
     // Wallingford
-    { name: "Leny's Place", hood: "Wallingford", price: "$", vibe: "A low-key Wallingford neighborhood bar for a quiet beer." },
+    { name: "Leny's Place", city: "Seattle", hood: "Wallingford", price: "$", vibe: "A low-key Wallingford neighborhood bar for a quiet beer." },
     // Eastlake
-    { name: "Eastlake Zoo Tavern", hood: "Eastlake", price: "$", vibe: "A scrappy Eastlake dive with a loyal, low-key crowd." },
+    { name: "Eastlake Zoo Tavern", city: "Seattle", hood: "Eastlake", price: "$", vibe: "A scrappy Eastlake dive with a loyal, low-key crowd." },
     // Pioneer Square
-    { name: "Central Saloon", hood: "Pioneer Square", price: "$", vibe: "Seattle's oldest saloon — hosted Nirvana's first Seattle show, still pours cheap and reliable drinks with live music most nights." },
+    { name: "Central Saloon", city: "Seattle", hood: "Pioneer Square", price: "$", vibe: "Seattle's oldest saloon — hosted Nirvana's first Seattle show, still pours cheap and reliable drinks with live music most nights." },
     // West Seattle
-    { name: "Poggie Tavern", hood: "West Seattle", price: "$$", vibe: "A West Seattle neighborhood tavern with a friendly, regulars-first feel." },
+    { name: "Poggie Tavern", city: "Seattle", hood: "West Seattle", price: "$$", vibe: "A West Seattle neighborhood tavern with a friendly, regulars-first feel." },
     // South Park
-    { name: "Loretta's Northwesterner", hood: "South Park", price: "$", vibe: "A South Park institution known for its burger, plush booths, and beers under $5 — plus a hidden back patio." },
+    { name: "Loretta's Northwesterner", city: "Seattle", hood: "South Park", price: "$", vibe: "A South Park institution known for its burger, plush booths, and beers under $5 — plus a hidden back patio." },
     // Madison Park
-    { name: "Red Onion Tavern", hood: "Madison Park", price: "$$", vibe: "A Madison Park neighborhood tavern with a slightly more polished, upscale-adjacent feel." },
+    { name: "Red Onion Tavern", city: "Seattle", hood: "Madison Park", price: "$$", vibe: "A Madison Park neighborhood tavern with a slightly more polished, upscale-adjacent feel." },
     // Ravenna/Roosevelt
-    { name: "The Duchess Tavern", hood: "Ravenna/Roosevelt", price: "$$", vibe: "A Ravenna/Roosevelt neighborhood tavern, casual and unfussy." },
+    { name: "The Duchess Tavern", city: "Seattle", hood: "Ravenna/Roosevelt", price: "$$", vibe: "A Ravenna/Roosevelt neighborhood tavern, casual and unfussy." },
     // New additions — see new-venues-draft.md for verification notes.
     // Ballard
-    { name: "Kangaroo & Kiwi", hood: "Ballard", price: "$", vibe: "An Australian-themed pub in a converted Carnegie library — meat pies, footy on the screens, and regular trivia nights." },
-    { name: "Lock & Keel Tavern", hood: "Ballard", price: "$", vibe: "A nautical-themed dive that calls itself \"Ballard Avenue's most regular of watering holes\" — and it earns it." },
-    { name: "Rough & Tumble (Ballard)", hood: "Ballard", price: "$$", vibe: "Seattle's first women's sports bar — 18 screens, craft beer, and a genuinely great place to watch any game." },
+    { name: "Kangaroo & Kiwi", city: "Seattle", hood: "Ballard", price: "$", vibe: "An Australian-themed pub in a converted Carnegie library — meat pies, footy on the screens, and regular trivia nights." },
+    { name: "Lock & Keel Tavern", city: "Seattle", hood: "Ballard", price: "$", vibe: "A nautical-themed dive that calls itself \"Ballard Avenue's most regular of watering holes\" — and it earns it." },
+    { name: "Rough & Tumble (Ballard)", city: "Seattle", hood: "Ballard", price: "$$", vibe: "Seattle's first women's sports bar — 18 screens, craft beer, and a genuinely great place to watch any game." },
     // Capitol Hill
-    { name: "Montana", hood: "Capitol Hill", price: "$", vibe: "A Capitol Hill dive that pioneered cocktails on tap — casual, a little scuffed up, very Seattle." },
+    { name: "Montana", city: "Seattle", hood: "Capitol Hill", price: "$", vibe: "A Capitol Hill dive that pioneered cocktails on tap — casual, a little scuffed up, very Seattle." },
     // Belltown
-    { name: "Shorty's", hood: "Belltown", price: "$", vibe: "A Coney-Island-themed pinball dive with clown decor and hot dogs since 1997 — a Belltown icon." },
+    { name: "Shorty's", city: "Seattle", hood: "Belltown", price: "$", vibe: "A Coney-Island-themed pinball dive with clown decor and hot dogs since 1997 — a Belltown icon." },
     // Columbia City
-    { name: "Rough & Tumble (Columbia City)", hood: "Columbia City", price: "$$", vibe: "The Columbia City outpost of Seattle's women's sports bar — big screens, full bar, real community energy." },
+    { name: "Rough & Tumble (Columbia City)", city: "Seattle", hood: "Columbia City", price: "$$", vibe: "The Columbia City outpost of Seattle's women's sports bar — big screens, full bar, real community energy." },
     // Greenwood
-    { name: "Baranof", hood: "Greenwood", price: "$", vibe: "A Greenwood nautical dive that also serves breakfast — karaoke, pool, and a devoted neighborhood following." },
+    { name: "Baranof", city: "Seattle", hood: "Greenwood", price: "$", vibe: "A Greenwood nautical dive that also serves breakfast — karaoke, pool, and a devoted neighborhood following." },
     // Magnolia
-    { name: "Boxcar Ale House", hood: "Magnolia", price: "$", vibe: "A beloved Magnolia dive with karaoke, a ping-pong patio, and cheap PBR — a real neighborhood hangout." }
+    { name: "Boxcar Ale House", city: "Seattle", hood: "Magnolia", price: "$", vibe: "A beloved Magnolia dive with karaoke, a ping-pong patio, and cheap PBR — a real neighborhood hangout." },
+    // Bellevue — a second-city test batch (see project backlog). Fewer
+    // venues and coarser neighborhood groupings than Seattle on purpose —
+    // this is a small starting set, not a full parallel buildout.
+    { name: "The Goose Pub N Eatery", city: "Bellevue", hood: "Crossroads", price: "$", vibe: "A Bellevue neighborhood institution since 1982 — darts, pool, a jukebox, and genuinely cheap drinks." },
+    { name: "Paddy Coyne's Bellevue", city: "Bellevue", hood: "Downtown Bellevue", price: "$$", vibe: "A proper Irish pub in the heart of downtown Bellevue — Guinness, whiskey, and Irish comfort food." },
+    { name: "Lucky Strike Bellevue", city: "Bellevue", hood: "Downtown Bellevue", price: "$$", vibe: "Bowling, arcade games, and craft cocktails under one upscale roof in Lincoln Square — great for a big group." }
   ];
 
   // Cocktail Mode — straightforward cocktail-bar language, and its own
@@ -1214,30 +1304,32 @@
   // the entrance isn't separately listed on Google Maps.
   const speakeasyVenues = [
     // Capitol Hill
-    { name: "Canon", hood: "Capitol Hill", price: "$$$", vibe: "One of the most acclaimed whiskey and cocktail bars in the country — an enormous spirits collection and serious craft." },
-    { name: "Liberty", hood: "Capitol Hill", price: "$$", vibe: "A longtime Capitol Hill cocktail bar with a relaxed, unpretentious vibe." },
-    { name: "Bait Shop", hood: "Capitol Hill", price: "$$", vibe: "A tiki-themed cocktail bar with tropical drinks and a fun, escapist vibe." },
-    { name: "The Doctor's Office", hood: "Capitol Hill", price: "$$", vibe: "A well-regarded Capitol Hill cocktail bar with a focused, craft-forward menu." },
-    { name: "Herb & Bitter Public House", hood: "Capitol Hill", price: "$$", vibe: "A Capitol Hill cocktail bar built around herbal and bitter-forward drinks — great for adventurous orders." },
-    { name: "Rumba", hood: "Capitol Hill", price: "$$", vibe: "A rum specialist with hundreds of bottles and a half-dozen styles of daiquiri — a spot of Caribbean sunshine on Capitol Hill." },
-    { name: "Inside Passage", hood: "Capitol Hill", price: "$$$", vibe: "An underwater-themed hidden speakeasy tucked behind Rumba — moody, immersive, worth the search." },
-    { name: "Needle & Thread", hood: "Capitol Hill", mapName: "Tavern Law", price: "$$$", vibe: "A hidden speakeasy accessed through Tavern Law — one of Seattle's original craft cocktail destinations." },
+    { name: "Canon", city: "Seattle", hood: "Capitol Hill", price: "$$$", vibe: "One of the most acclaimed whiskey and cocktail bars in the country — an enormous spirits collection and serious craft." },
+    { name: "Liberty", city: "Seattle", hood: "Capitol Hill", price: "$$", vibe: "A longtime Capitol Hill cocktail bar with a relaxed, unpretentious vibe." },
+    { name: "Bait Shop", city: "Seattle", hood: "Capitol Hill", price: "$$", vibe: "A tiki-themed cocktail bar with tropical drinks and a fun, escapist vibe." },
+    { name: "The Doctor's Office", city: "Seattle", hood: "Capitol Hill", price: "$$", vibe: "A well-regarded Capitol Hill cocktail bar with a focused, craft-forward menu." },
+    { name: "Herb & Bitter Public House", city: "Seattle", hood: "Capitol Hill", price: "$$", vibe: "A Capitol Hill cocktail bar built around herbal and bitter-forward drinks — great for adventurous orders." },
+    { name: "Rumba", city: "Seattle", hood: "Capitol Hill", price: "$$", vibe: "A rum specialist with hundreds of bottles and a half-dozen styles of daiquiri — a spot of Caribbean sunshine on Capitol Hill." },
+    { name: "Inside Passage", city: "Seattle", hood: "Capitol Hill", price: "$$$", vibe: "An underwater-themed hidden speakeasy tucked behind Rumba — moody, immersive, worth the search." },
+    { name: "Needle & Thread", city: "Seattle", hood: "Capitol Hill", mapName: "Tavern Law", price: "$$$", vibe: "A hidden speakeasy accessed through Tavern Law — one of Seattle's original craft cocktail destinations." },
     // Ballard
-    { name: "Percy's & Co.", hood: "Ballard", price: "$$", vibe: "A stylish Ballard cocktail bar with a well-crafted, seasonal drink menu." },
-    { name: "Essex", hood: "Ballard", price: "$$", vibe: "A cozy Ballard cocktail lounge, good for a quieter night out." },
-    { name: "Baker's", hood: "Ballard", price: "$$", vibe: "A Ballard cocktail bar with a loyal following that rallied to keep it open." },
+    { name: "Percy's & Co.", city: "Seattle", hood: "Ballard", price: "$$", vibe: "A stylish Ballard cocktail bar with a well-crafted, seasonal drink menu." },
+    { name: "Essex", city: "Seattle", hood: "Ballard", price: "$$", vibe: "A cozy Ballard cocktail lounge, good for a quieter night out." },
+    { name: "Baker's", city: "Seattle", hood: "Ballard", price: "$$", vibe: "A Ballard cocktail bar with a loyal following that rallied to keep it open." },
     // Belltown
-    { name: "Rob Roy", hood: "Belltown", price: "$$$", vibe: "A long-running, highly regarded Belltown cocktail bar — a Seattle classic for serious drinks." },
-    { name: "Roquette", hood: "Belltown", price: "$$", vibe: "A Belltown cocktail bar with a creative, well-executed menu." },
-    { name: "Bathtub Gin & Co.", hood: "Belltown", price: "$$$", vibe: "A speakeasy-style Belltown cocktail bar with a moody, intimate feel." },
+    { name: "Rob Roy", city: "Seattle", hood: "Belltown", price: "$$$", vibe: "A long-running, highly regarded Belltown cocktail bar — a Seattle classic for serious drinks." },
+    { name: "Roquette", city: "Seattle", hood: "Belltown", price: "$$", vibe: "A Belltown cocktail bar with a creative, well-executed menu." },
+    { name: "Bathtub Gin & Co.", city: "Seattle", hood: "Belltown", price: "$$$", vibe: "A speakeasy-style Belltown cocktail bar with a moody, intimate feel." },
     // Queen Anne
-    { name: "Rich Rich", hood: "Queen Anne", price: "$$", vibe: "A stylish Queen Anne cocktail bar with a playful, photogenic vibe." },
+    { name: "Rich Rich", city: "Seattle", hood: "Queen Anne", price: "$$", vibe: "A stylish Queen Anne cocktail bar with a playful, photogenic vibe." },
     // Fremont
-    { name: "Stampede Cocktail Club", hood: "Fremont", price: "$$", vibe: "A Fremont cocktail club with a fun, high-energy atmosphere." },
+    { name: "Stampede Cocktail Club", city: "Seattle", hood: "Fremont", price: "$$", vibe: "A Fremont cocktail club with a fun, high-energy atmosphere." },
     // Greenwood
-    { name: "Dark Room", hood: "Greenwood", price: "$$", vibe: "A moody Greenwood cocktail bar earning recent local press for its craft and atmosphere." },
+    { name: "Dark Room", city: "Seattle", hood: "Greenwood", price: "$$", vibe: "A moody Greenwood cocktail bar earning recent local press for its craft and atmosphere." },
     // Pioneer Square
-    { name: "Dead Line", hood: "Pioneer Square", price: "$$", vibe: "A Pioneer Square cocktail bar with a sleek, modern take on the neighborhood's historic bones." }
+    { name: "Dead Line", city: "Seattle", hood: "Pioneer Square", price: "$$", vibe: "A Pioneer Square cocktail bar with a sleek, modern take on the neighborhood's historic bones." },
+    // Bellevue
+    { name: "Civility & Unrest", city: "Bellevue", hood: "Downtown Bellevue", price: "$$$", vibe: "A speakeasy-inspired cocktail lounge below the W Bellevue, from a James Beard Award-winning chef — moody, upscale, and a genuine Eastside favorite." }
   ];
 
   // Upcoming Mode — real, dated Seattle-area events where you can plausibly
@@ -1321,6 +1413,71 @@
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  // Two arrays contain the exact same set of venue objects (order doesn't
+  // matter) — used below to tell whether a venue pool's composition
+  // changed since the last draw (now genuinely possible any time a
+  // neighborhood/price/city filter is toggled, in addition to the
+  // original Upcoming-mode date-filtering case) versus just being a fresh
+  // array instance wrapping the same venues, which the filter functions
+  // return on every call even when nothing actually changed.
+  function sameVenueSet(a, b) {
+    if (!a || a.length !== b.length) return false;
+    for (let i = 0; i < b.length; i++) {
+      if (a.indexOf(b[i]) === -1) return false;
+    }
+    return true;
+  }
+
+  // No-repeat "shuffle bag" per venue pool, keyed by `key` (not by mode) —
+  // Degenerate and Low-Key draw from the exact same underlying venue list
+  // and the exact same active filters, so they share a key and a bag:
+  // switching between those two modes shouldn't un-stick a bar that just
+  // came up, since it's still the same physical bar either way. Cocktail
+  // and Upcoming get their own keys/bags since they draw from entirely
+  // different venue lists. Hands back venues in a random order with no
+  // repeats until every venue in the (currently-filtered) pool has been
+  // drawn once, then reshuffles a fresh bag — and nudges away from
+  // letting that reshuffle immediately repeat the venue that just
+  // finished the previous bag, so exhausting the list doesn't produce two
+  // back-to-back picks of the same bar right at the seam. Resets on page
+  // reload (in-memory only, not persisted) and whenever a pool's actual
+  // contents change (via sameVenueSet above) — which now includes any
+  // neighborhood/price/city filter toggle, not just Upcoming's date
+  // filtering, since applyNeighborhoodFilter/applyPriceFilter/
+  // applyCityFilter all return a genuinely different array when a filter
+  // is active.
+  const venueDrawState = {};
+  function drawVenue(key, pool) {
+    if (pool.length <= 1) return pool[0];
+    let state = venueDrawState[key];
+    if (!state || !sameVenueSet(state.pool, pool)) {
+      state = { pool: pool, remaining: shuffle(pool), lastDrawn: null };
+      venueDrawState[key] = state;
+    }
+    if (state.remaining.length === 0) {
+      const fresh = shuffle(pool);
+      if (fresh[fresh.length - 1] === state.lastDrawn) {
+        const swapIdx = Math.floor(Math.random() * (fresh.length - 1));
+        const tmp = fresh[fresh.length - 1];
+        fresh[fresh.length - 1] = fresh[swapIdx];
+        fresh[swapIdx] = tmp;
+      }
+      state.remaining = fresh;
+    }
+    const drawn = state.remaining.pop();
+    state.lastDrawn = drawn;
+    return drawn;
+  }
+
   let lastAnswer = '';
 
   let mode = 'degenerate';
@@ -1337,7 +1494,12 @@
   // Both now feed buildCompanionClause() below, which replaces the old
   // fixed " with " + pick(crews) tail — see crew-wording-draft.md for the
   // design (size picks sentence structure, composition picks word family).
-  const FIXED_CITY = 'Seattle, WA'; // hardcoded until multi-city actually ships
+  // City is now real, selectable state instead of a hardcoded stub — see
+  // the onboarding modal's city picker below. 'Seattle' is the default so
+  // existing behavior (skip onboarding, everything Seattle) is unchanged
+  // for anyone who doesn't touch this.
+  let selectedCity = 'Seattle';
+  const CITY_DISPLAY = { Seattle: 'Seattle, WA', Bellevue: 'Bellevue, WA' };
   let selectedNeighborhood = null; // null = "Anywhere"; '__remote__' = the pinned "surprise me" option; otherwise a literal hood string
   let priceSensitive = false;      // captured, but not yet wired to real filtering — no per-venue price-tier data exists yet
   let rerollStreak = 0;
@@ -1361,6 +1523,15 @@
     return Object.keys(counts)
       .map(function (hood) { return { hood: hood, count: counts[hood] }; })
       .sort(function (a, b) { return b.count - a.count; });
+  }
+
+  // City is a HARD filter, unlike neighborhood/price — someone who
+  // selected Bellevue should never see a Seattle venue, full stop, so
+  // there's no graceful-fallback-to-unfiltered-pool here. Venues without
+  // a city field (shouldn't happen post-this-change, but defensive) are
+  // treated as Seattle, matching the default selectedCity value.
+  function applyCityFilter(venuePool) {
+    return venuePool.filter(function (v) { return (v.city || 'Seattle') === selectedCity; });
   }
 
   // Applies the current neighborhood selection to a venue pool. Falls back
@@ -1452,15 +1623,15 @@
   // weekend (the mode button should be disabled in that case, but ask()
   // guards against it too).
   function nextAnswer() {
-    let verbPool, amountPool, venuePool;
+    let verbPool, amountPool, venuePool, poolKey;
     if (mode === 'lowkey') {
-      verbPool = lowKeyVerbs; amountPool = lowKeyAmounts; venuePool = venues;
+      verbPool = lowKeyVerbs; amountPool = lowKeyAmounts; venuePool = venues; poolKey = 'venues';
     } else if (mode === 'cocktail') {
-      verbPool = cocktailVerbs; amountPool = cocktailAmounts; venuePool = speakeasyVenues;
+      verbPool = cocktailVerbs; amountPool = cocktailAmounts; venuePool = speakeasyVenues; poolKey = 'cocktail';
     } else if (mode === 'upcoming') {
-      verbPool = verbs; amountPool = amounts; venuePool = computeUpcomingPool();
+      verbPool = verbs; amountPool = amounts; venuePool = computeUpcomingPool(); poolKey = 'upcoming';
     } else {
-      verbPool = verbs; amountPool = amounts; venuePool = venues;
+      verbPool = verbs; amountPool = amounts; venuePool = venues; poolKey = 'venues';
     }
 
     // A solo roll quietly borrows Low-Key's tamer amounts on Degenerate/
@@ -1484,6 +1655,10 @@
       if (soloFriendly.length > 0) amountPool = soloFriendly;
     }
 
+    // City is a hard filter, applied first — Upcoming's events have no
+    // city field and aren't part of this (paused mode, Seattle-specific
+    // dated events anyway).
+    if (mode !== 'upcoming') venuePool = applyCityFilter(venuePool);
     if (mode !== 'upcoming') venuePool = applyNeighborhoodFilter(venuePool);
     // "Keep it cheap" only applies where price tags exist and the toggle
     // is actually reachable — Degenerate/Low-Key. Cocktail's toggle is
@@ -1495,11 +1670,16 @@
       return { text: "Nothing drink-worthy on the calendar this weekend — check back soon.", venue: null };
     }
 
+    // Exactly one venue draw per roll — the venue stays fixed for this
+    // roll even if the verb/amount/crew retry loop below runs more than
+    // once, so a single "Ask the Ball" tap never burns through more than
+    // one venue from the no-repeat bag.
+    const venue = drawVenue(poolKey, venuePool);
+
     let text;
-    let venue, verb, amount, crew;
+    let verb, amount, crew;
     let attempts = 0;
     do {
-      venue = pick(venuePool);
       verb = pick(verbPool);
       amount = pick(amountPool);
       crew = pickCompanionWord();
@@ -1522,13 +1702,16 @@
     return venue.name.toLowerCase().includes(venue.hood.toLowerCase()) ? '' : venue.hood;
   }
 
-  // Plain "<place>, Seattle, WA"-style text — shared by the Get Directions
+  // Plain "<place>, <city>, WA"-style text — shared by the Get Directions
   // Maps link and the Add to Calendar LOCATION field so the two stay
-  // consistent instead of building this string twice.
+  // consistent instead of building this string twice. Uses the venue's OWN
+  // city field, not the currently-selected city filter — a Bellevue venue
+  // always searches as Bellevue regardless of what's selected in Refine.
   function venueLocationText(venue) {
     if (venue.mapQuery) return venue.mapQuery;
     const searchName = venue.mapName || venue.name;
-    return searchName + ', Seattle, WA';
+    const city = venue.city || 'Seattle';
+    return searchName + ', ' + city + ', WA';
   }
 
   function venueMapUrl(venue) {
@@ -1901,26 +2084,145 @@
 
   // --- Onboarding modal (city / group size / composition) ---------------
   const onboardingModal = document.getElementById('onboardingModal');
-  const notInSeattleLink = document.getElementById('notInSeattleLink');
+  const cityInput = document.getElementById('cityInput');
+  const cityAutocompleteList = document.getElementById('cityAutocompleteList');
   const cityNote = document.getElementById('cityNote');
   const groupSizeGrid = document.getElementById('groupSizeGrid');
   const groupCompGrid = document.getElementById('groupCompGrid');
   const onboardingContinueBtn = document.getElementById('onboardingContinueBtn');
   const onboardingSkipLink = document.getElementById('onboardingSkipLink');
 
+  // Derived from the venue data itself (every distinct `city` value across
+  // both venue arrays) rather than a separate hardcoded list — same
+  // "single source of truth" approach already used for the neighborhood
+  // list, so a future city just needs its venues tagged, nothing else to
+  // remember to update here.
+  const SUPPORTED_CITIES = Array.from(new Set(
+    venues.concat(speakeasyVenues).map(function (v) { return v.city; }).filter(Boolean)
+  )).sort();
+
+  let cityFocusedIndex = -1;
+
+  function updateCityNote() {
+    // Seattle has the original, fullest venue list — any other city is
+    // honestly a smaller, newer batch until it's had its own real
+    // research pass, so this stays generic rather than naming one city.
+    cityNote.hidden = selectedCity === 'Seattle';
+    if (!cityNote.hidden) {
+      cityNote.textContent = 'This is a smaller test batch of venues compared to Seattle.';
+    }
+  }
+
+  function closeCityAutocomplete() {
+    cityAutocompleteList.hidden = true;
+    cityInput.setAttribute('aria-expanded', 'false');
+    cityFocusedIndex = -1;
+  }
+
+  function renderCityOptions(query) {
+    const q = (query || '').trim().toLowerCase();
+    const matches = q
+      ? SUPPORTED_CITIES.filter(function (c) { return c.toLowerCase().indexOf(q) !== -1; })
+      : SUPPORTED_CITIES;
+
+    if (matches.length === 0) {
+      cityAutocompleteList.innerHTML = '<li class="city-autocomplete-empty">We don\'t have that city yet</li>';
+      cityAutocompleteList.hidden = false;
+      cityInput.setAttribute('aria-expanded', 'true');
+      cityFocusedIndex = -1;
+      return;
+    }
+
+    cityAutocompleteList.innerHTML = matches.map(function (c, i) {
+      return '<li class="city-autocomplete-option" role="option" data-value="' + c + '" id="cityOption' + i + '">📍 ' + c + '</li>';
+    }).join('');
+    cityAutocompleteList.hidden = false;
+    cityInput.setAttribute('aria-expanded', 'true');
+    cityFocusedIndex = -1;
+
+    Array.from(cityAutocompleteList.querySelectorAll('.city-autocomplete-option')).forEach(function (opt) {
+      opt.addEventListener('mousedown', function (e) {
+        // mousedown (not click) so this fires before the input's blur
+        e.preventDefault();
+        selectCity(opt.dataset.value);
+      });
+    });
+  }
+
+  function selectCity(city) {
+    selectedCity = city;
+    cityInput.value = city;
+    // A city switch can invalidate the current neighborhood selection
+    // (a Seattle neighborhood picked earlier won't exist in Bellevue) —
+    // same reasoning as the mode-switch reset elsewhere.
+    selectedNeighborhood = null;
+    updateCityNote();
+    closeCityAutocomplete();
+  }
+
+  cityInput.addEventListener('input', function () {
+    renderCityOptions(cityInput.value);
+  });
+  cityInput.addEventListener('focus', function () {
+    renderCityOptions(''); // show everything to browse, not just matches for whatever's pre-filled
+    cityInput.select();
+  });
+  cityInput.addEventListener('blur', function () {
+    // Give a mousedown-selected option time to register before we
+    // validate/close — otherwise the click never lands.
+    setTimeout(function () {
+      const typed = cityInput.value.trim();
+      const exact = SUPPORTED_CITIES.find(function (c) { return c.toLowerCase() === typed.toLowerCase(); });
+      if (exact) {
+        selectCity(exact);
+      } else {
+        // Not a real, supported city — don't leave the input in a broken
+        // state or silently accept typo'd/unsupported input; revert to
+        // whatever's actually selected.
+        cityInput.value = selectedCity;
+      }
+      closeCityAutocomplete();
+    }, 120);
+  });
+  cityInput.addEventListener('keydown', function (e) {
+    const options = Array.from(cityAutocompleteList.querySelectorAll('.city-autocomplete-option'));
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (cityAutocompleteList.hidden) { renderCityOptions(cityInput.value); return; }
+      if (options.length === 0) return;
+      cityFocusedIndex = (cityFocusedIndex + 1) % options.length;
+      options.forEach(function (o, i) { o.classList.toggle('focused', i === cityFocusedIndex); });
+      options[cityFocusedIndex].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (options.length === 0) return;
+      cityFocusedIndex = (cityFocusedIndex - 1 + options.length) % options.length;
+      options.forEach(function (o, i) { o.classList.toggle('focused', i === cityFocusedIndex); });
+      options[cityFocusedIndex].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (cityFocusedIndex >= 0 && options[cityFocusedIndex]) {
+        selectCity(options[cityFocusedIndex].dataset.value);
+      }
+      cityInput.blur();
+    } else if (e.key === 'Escape') {
+      closeCityAutocomplete();
+      cityInput.blur();
+    }
+  });
+  document.addEventListener('click', function (e) {
+    if (!document.getElementById('citySearch').contains(e.target)) closeCityAutocomplete();
+  });
+
   function openOnboarding() {
+    cityInput.value = selectedCity;
+    updateCityNote();
+    closeCityAutocomplete();
     onboardingModal.classList.add('visible');
   }
   function closeOnboarding() {
     onboardingModal.classList.remove('visible');
   }
-
-  notInSeattleLink.addEventListener('click', function () {
-    // Only Seattle exists today — an honest answer rather than a picker
-    // with nowhere to go. Becomes a real city switcher once multi-city
-    // support actually ships.
-    cityNote.hidden = false;
-  });
 
   function wirePillGrid(grid, onSelect) {
     Array.from(grid.querySelectorAll('.pill-btn')).forEach(function (btn) {
@@ -1942,6 +2244,7 @@
   onboardingContinueBtn.addEventListener('click', function () {
     closeOnboarding();
     renderSetupSummary();
+    renderNeighborhoodOptions();
     refreshRefineChipLabel();
   });
   onboardingSkipLink.addEventListener('click', function () {
@@ -1957,7 +2260,7 @@
   function renderSetupSummary() {
     const setupSummary = document.getElementById('setupSummary');
     if (!setupSummary) return;
-    const chips = ['<span class="setup-chip">📍 ' + FIXED_CITY.replace(', WA', '') + '</span>'];
+    const chips = ['<span class="setup-chip">📍 ' + selectedCity + '</span>'];
     chips.push('<span class="setup-chip">' + (groupSize ? setupSizeLabels[groupSize] : 'Group size not set') + '</span>');
     chips.push('<span class="setup-chip">' + (groupComposition ? setupCompLabels[groupComposition] : 'Who\'s out not set') + '</span>');
     chips.push('<button class="setup-edit-link" type="button" id="setupEditLink">Edit</button>');
@@ -1987,10 +2290,12 @@
   });
 
   function currentModeVenuePool() {
-    if (mode === 'lowkey') return venues;
-    if (mode === 'cocktail') return speakeasyVenues;
-    if (mode === 'upcoming') return [];
-    return venues;
+    let pool;
+    if (mode === 'lowkey') pool = venues;
+    else if (mode === 'cocktail') pool = speakeasyVenues;
+    else if (mode === 'upcoming') return [];
+    else pool = venues;
+    return applyCityFilter(pool);
   }
 
   const priceToggleRow = document.getElementById('priceToggleRow');
@@ -2535,11 +2840,14 @@
     }
   }
 
-  // Which calendar entry the currently-showing result would create, and
-  // the object URL currently backing venueCalendarLink's href (revoked and
-  // rebuilt on every new result so unused blobs don't pile up).
-  let currentCalendarInfo = null;
-  let calendarObjectUrl = null;
+  // The venue/text a "Add to Calendar" click should build an event for —
+  // stored raw rather than pre-built into a ready .ics blob, since the
+  // customizer modal now lets the user tune date/time/duration before
+  // anything is actually generated. Upcoming-mode events (real fixed
+  // times) bypass the modal entirely and build directly from these.
+  let pendingCalendarVenue = null;
+  let pendingCalendarText = null;
+  let pendingCalendarIsSharedView = false;
 
   // The Firestore doc ID backing the currently-showing roll's live RSVP
   // list, if one exists — null when Firestore couldn't be reached and the
@@ -2551,18 +2859,6 @@
   // ask()) — cleared whenever a newer roll supersedes it before it fires.
   let rollWriteTimer = null;
   const ROLL_WRITE_DEBOUNCE_MS = 1200;
-
-  function setCalendarLinkHref(info) {
-    if (calendarObjectUrl) { URL.revokeObjectURL(calendarObjectUrl); calendarObjectUrl = null; }
-    if (!info) {
-      venueCalendarLink.removeAttribute('href');
-      venueCalendarLink.removeAttribute('download');
-      return;
-    }
-    calendarObjectUrl = URL.createObjectURL(buildIcsBlob(info));
-    venueCalendarLink.href = calendarObjectUrl;
-    venueCalendarLink.download = 'weekend-activity-ball.ics';
-  }
 
   // The three action-area states: a fresh roll on your own device (small
   // Add to Calendar link, Share Result primary); a friend arriving via a
@@ -2596,23 +2892,50 @@
     commitConfirm.hidden = false;
   }
 
-  venueCalendarLink.addEventListener('click', function (e) {
-    if (!venueCalendarLink.getAttribute('href')) e.preventDefault();
-  });
+  // --- Calendar customizer modal ------------------------------------
+  // Replaces the old "silently default to the nearest Friday at 7pm"
+  // behavior — the nearest-Friday/7pm/3-hour values now only serve as
+  // pre-filled starting points in an editable form, not a claim baked
+  // into the .ics without the person's input. Upcoming-mode events (real,
+  // fixed start times) skip this entirely — there's nothing to customize
+  // when the actual game/festival time is already known.
+  const calendarModal = document.getElementById('calendarModal');
+  const calDateInput = document.getElementById('calDateInput');
+  const calTimeInput = document.getElementById('calTimeInput');
+  const calDurationInput = document.getElementById('calDurationInput');
+  const calendarConfirmBtn = document.getElementById('calendarConfirmBtn');
+  const calendarCancelBtn = document.getElementById('calendarCancelBtn');
 
-  commitBtn.addEventListener('click', async function () {
-    if (!currentCalendarInfo) return;
-    downloadIcs(buildIcsBlob(currentCalendarInfo));
+  function openCalendarCustomizer(venue, text, isSharedView) {
+    pendingCalendarVenue = venue;
+    pendingCalendarText = text;
+    pendingCalendarIsSharedView = isSharedView;
+
+    const defaultDate = upcomingWeekendRange(new Date()).start;
+    calDateInput.value = defaultDate;
+    calTimeInput.value = pad2(DEFAULT_EVENT_HOUR) + ':00';
+    calDurationInput.value = String(DEFAULT_EVENT_DURATION_HOURS);
+
+    calendarModal.classList.add('visible');
+  }
+  function closeCalendarCustomizer() {
+    calendarModal.classList.remove('visible');
+  }
+
+  function finalizeCalendarAdd(info) {
+    downloadIcs(buildIcsBlob(info));
     rerollStreak = 0;
     nudgeDismissedThisStreak = false;
     hideNudge();
+  }
 
-    // Named RSVP: ask once, in-memory only for this page load — not saved
-    // to localStorage/sessionStorage, since this file is also published as
-    // a claude.ai artifact and browser storage APIs aren't supported there.
-    // If there's no live roll doc (Firestore write failed earlier, or this
-    // is a legacy link), there's nowhere to record the RSVP, so skip
-    // straight to the confirmation panel without asking for a name.
+  // Named RSVP: ask once, in-memory only for this page load — not saved
+  // to localStorage/sessionStorage, since this file is also published as
+  // a claude.ai artifact and browser storage APIs aren't supported there.
+  // If there's no live roll doc (Firestore write failed earlier, or this
+  // is a legacy link), there's nowhere to record the RSVP, so skip
+  // straight to the confirmation panel without asking for a name.
+  async function handleSharedViewRsvpAndConfirm() {
     if (currentRollId) {
       const name = (window.prompt("What's your name, so the group can see you're in?") || '').trim();
       if (name) {
@@ -2626,8 +2949,50 @@
         }
       }
     }
-
     showCommitConfirmation();
+  }
+
+  calendarConfirmBtn.addEventListener('click', async function () {
+    if (!pendingCalendarVenue || !calDateInput.value || !calTimeInput.value) {
+      closeCalendarCustomizer();
+      return;
+    }
+    const dateParts = calDateInput.value.split('-').map(Number);
+    const timeParts = calTimeInput.value.split(':').map(Number);
+    const info = {
+      title: pendingCalendarText,
+      location: venueLocationText(pendingCalendarVenue),
+      allDay: false,
+      year: dateParts[0], month: dateParts[1], day: dateParts[2],
+      hour: timeParts[0], minute: timeParts[1],
+      durationHours: parseFloat(calDurationInput.value) || DEFAULT_EVENT_DURATION_HOURS
+    };
+    const wasSharedView = pendingCalendarIsSharedView;
+    closeCalendarCustomizer();
+    finalizeCalendarAdd(info);
+    if (wasSharedView) await handleSharedViewRsvpAndConfirm();
+  });
+  calendarCancelBtn.addEventListener('click', closeCalendarCustomizer);
+
+  venueCalendarLink.addEventListener('click', function () {
+    if (!pendingCalendarVenue) return;
+    if (mode === 'upcoming') {
+      // Real, fixed event data — nothing to customize, this genuinely is
+      // when it happens.
+      finalizeCalendarAdd(buildCalendarInfo(pendingCalendarVenue, pendingCalendarText));
+    } else {
+      openCalendarCustomizer(pendingCalendarVenue, pendingCalendarText, false);
+    }
+  });
+
+  commitBtn.addEventListener('click', async function () {
+    if (!pendingCalendarVenue) return;
+    if (mode === 'upcoming') {
+      finalizeCalendarAdd(buildCalendarInfo(pendingCalendarVenue, pendingCalendarText));
+      await handleSharedViewRsvpAndConfirm();
+    } else {
+      openCalendarCustomizer(pendingCalendarVenue, pendingCalendarText, true);
+    }
   });
 
   copyReplyBtn.addEventListener('click', async function () {
@@ -2694,8 +3059,9 @@
         renderVenueWhy(result.venue);
         showOwnRollActions();
         setPrimaryCta('share');
-        currentCalendarInfo = buildCalendarInfo(result.venue, result.text);
-        setCalendarLinkHref(currentCalendarInfo);
+        pendingCalendarVenue = result.venue;
+        pendingCalendarText = result.text;
+        pendingCalendarIsSharedView = false;
         // Share works immediately off a plain (non-live) link — no need to
         // wait on a network round trip just to enable the button. The
         // Firestore doc that upgrades this into a LIVE-tracking link is
@@ -2732,8 +3098,8 @@
         shareBtn.disabled = true;
         showOwnRollActions();
         setPrimaryCta('ask');
-        currentCalendarInfo = null;
-        setCalendarLinkHref(null);
+        pendingCalendarVenue = null;
+        pendingCalendarText = null;
         if (unsubscribeRsvp) { unsubscribeRsvp(); unsubscribeRsvp = null; }
         currentRollId = null;
         renderRsvpList([]);
@@ -2829,7 +3195,9 @@
       currentRollId = rollId;
       prepareShareImage(text, buildShareUrl(rollId));
       subscribeToRoll(rollId); // live "who's in" list for this shared roll
-      currentCalendarInfo = buildCalendarInfo(venue, text);
+      pendingCalendarVenue = venue;
+      pendingCalendarText = text;
+      pendingCalendarIsSharedView = true;
       showSharedViewActions();
     } else {
       // The underlying venue/event data moved on since this was shared
@@ -2839,7 +3207,8 @@
       hint.textContent = m === 'upcoming'
         ? "That one's already come and gone — ask the ball for what's next."
         : "Couldn't find that one anymore — ask the ball for something new.";
-      currentCalendarInfo = null;
+      pendingCalendarVenue = null;
+      pendingCalendarText = null;
       currentRollId = null;
       showOwnRollActions();
       setPrimaryCta('ask');
@@ -2911,7 +3280,9 @@
       // rolling it yourself — see showSharedViewActions() — so this branch
       // manages the action-area state directly instead of calling
       // setPrimaryCta(), which is only for the plain own-roll toggle.
-      currentCalendarInfo = buildCalendarInfo(venue, text);
+      pendingCalendarVenue = venue;
+      pendingCalendarText = text;
+      pendingCalendarIsSharedView = true;
       showSharedViewActions();
     } else {
       // The underlying data moved on (e.g. this event was pruned by the
@@ -2921,7 +3292,8 @@
       hint.textContent = m === 'upcoming'
         ? "That one's already come and gone — ask the ball for what's next."
         : "Couldn't find that one anymore — ask the ball for something new.";
-      currentCalendarInfo = null;
+      pendingCalendarVenue = null;
+      pendingCalendarText = null;
       showOwnRollActions();
       setPrimaryCta('ask');
     }
