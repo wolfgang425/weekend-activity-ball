@@ -658,6 +658,20 @@
     outline: none;
     border-color: var(--amber-deep);
   }
+  /* iOS Safari won't fully cede styling control for date/time inputs —
+     it still draws its own native rounded chip around the value on top
+     of whatever background/border we set, which is what was producing
+     the misaligned "two boxes" look. Stripping our own box here lets
+     the native control render cleanly instead of clashing with it;
+     .city-search-input's box styling is kept for the plain text (city
+     search) and select (duration) inputs, which don't have this problem. */
+  input[type="date"].city-search-input,
+  input[type="time"].city-search-input {
+    background: transparent;
+    border: none;
+    padding: 4px 0;
+    color-scheme: dark;
+  }
   .city-autocomplete-list {
     position: absolute;
     top: calc(100% + 6px);
