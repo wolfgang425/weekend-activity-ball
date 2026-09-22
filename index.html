@@ -1317,7 +1317,20 @@
     // this is a small starting set, not a full parallel buildout.
     { name: "The Goose Pub N Eatery", city: "Bellevue", hood: "Crossroads", price: "$", vibe: "A Bellevue neighborhood institution since 1982 — darts, pool, a jukebox, and genuinely cheap drinks." },
     { name: "Paddy Coyne's Bellevue", city: "Bellevue", hood: "Downtown Bellevue", price: "$$", vibe: "A proper Irish pub in the heart of downtown Bellevue — Guinness, whiskey, and Irish comfort food." },
-    { name: "Lucky Strike Bellevue", city: "Bellevue", hood: "Downtown Bellevue", price: "$$", vibe: "Bowling, arcade games, and craft cocktails under one upscale roof in Lincoln Square — great for a big group." }
+    { name: "Lucky Strike Bellevue", city: "Bellevue", hood: "Downtown Bellevue", price: "$$", vibe: "Bowling, arcade games, and craft cocktails under one upscale roof in Lincoln Square — great for a big group." },
+    // Phoenix — a third-city test batch, same small-and-verified approach
+    // as Bellevue. Real Phoenix reviewers requested this one specifically.
+    { name: "Bikini Lounge", city: "Phoenix", hood: "Grand Avenue", price: "$", vibe: "A cash-only tiki dive on Grand Avenue since 1947 — one of Phoenix's most iconic bars, no windows, no pretension." },
+    { name: "Chopper John's", city: "Phoenix", hood: "Midtown", price: "$", vibe: "The original Phoenix biker bar — cheap drinks, live music, and loaded Bloody Marys on Sundays." },
+    { name: "Paradise Lounge", city: "Phoenix", hood: "North Phoenix", price: "$", vibe: "A north Phoenix dive with pool, darts, and a surprising stash of board games — Candy Land included." },
+    { name: "Boondocks Patio & Grill", city: "Phoenix", hood: "Scottsdale", price: "$$", mapQuery: "Boondocks Patio & Grill, Scottsdale, AZ", vibe: "A sprawling Old Town Scottsdale patio bar — pool, darts, live music, and genuinely great bar food. Phoenix New Times' Best Neighborhood Bar." },
+    { name: "Casey Moore's Oyster House", city: "Phoenix", hood: "Tempe", price: "$", mapQuery: "Casey Moore's Oyster House, Tempe, AZ", vibe: "The true heart of Tempe nightlife — a haunted 1910 house turned Irish pub, packed with both ASU students and lifelong locals." },
+    { name: "Yucca Tap Room", city: "Phoenix", hood: "Tempe", price: "$", mapQuery: "Yucca Tap Room, Tempe, AZ", vibe: "A Tempe landmark since 1972 — live music, a full pinball arcade, and one of the best craft beer selections in the Valley." },
+    { name: "O.H.S.O. Brewery", city: "Phoenix", hood: "Arcadia", price: "$$", mapQuery: "O.H.S.O. Brewery, Arcadia, Phoenix, AZ", vibe: "A nano-brewery and distillery on the Arizona Canal — 36+ beers on tap, a huge dog-friendly patio, and a real cornerstone of Arcadia's social scene." },
+    { name: "Zipps Sports Grill", city: "Phoenix", hood: "Arcadia", price: "$$", mapQuery: "Zipps Sports Grill, Arcadia, Phoenix, AZ", vibe: "A family-owned local sports bar chain favorite — pool, shuffleboard, a fireplace patio, and genuinely unbeatable happy hour." },
+    { name: "Angel's Trumpet Ale House", city: "Phoenix", hood: "Downtown Phoenix", price: "$$", mapQuery: "Angel's Trumpet Ale House, Phoenix, AZ", vibe: "A Roosevelt Row craft beer staple since 2012 — 31 rotating taps, a dog-friendly backyard patio, and house-made pop tarts." },
+    { name: "Coach House", city: "Phoenix", hood: "Scottsdale", price: "$", mapQuery: "Coach House, Scottsdale, AZ", vibe: "Scottsdale's oldest dive, family-owned since 1959 — heavy pours, a huge patio, and Christmas lights up nearly year-round." },
+    { name: "Rusty Spur Saloon", city: "Phoenix", hood: "Scottsdale", price: "$", mapQuery: "Rusty Spur Saloon, Scottsdale, AZ", vibe: "A former 1921 bank turned honky-tonk saloon — live country music every night, cowboy memorabilia, zero cover charge." }
   ];
 
   // Cocktail Mode — straightforward cocktail-bar language, and its own
@@ -1361,6 +1374,9 @@
     { name: "Dark Room", city: "Seattle", hood: "Greenwood", price: "$$", vibe: "A moody Greenwood cocktail bar earning recent local press for its craft and atmosphere." },
     // Pioneer Square
     { name: "Dead Line", city: "Seattle", hood: "Pioneer Square", price: "$$", vibe: "A Pioneer Square cocktail bar with a sleek, modern take on the neighborhood's historic bones." },
+    // Phoenix
+    { name: "Bitter & Twisted Cocktail Parlour", city: "Phoenix", hood: "Downtown Phoenix", price: "$$", vibe: "An award-winning cocktail bar in Phoenix's historic Luhrs Building — once the Arizona Prohibition Headquarters, now the opposite. Ranked among North America's 50 Best Bars." },
+    { name: "Ghost Donkey", city: "Phoenix", hood: "Downtown Phoenix", price: "$$", vibe: "A moody Roosevelt Row mezcal and tequila bar — string lights, red neon, and a serious agave-spirits menu." },
     // Bellevue
     { name: "Civility & Unrest", city: "Bellevue", hood: "Downtown Bellevue", price: "$$$", vibe: "A speakeasy-inspired cocktail lounge below the W Bellevue, from a James Beard Award-winning chef — moody, upscale, and a genuine Eastside favorite." }
   ];
@@ -1750,16 +1766,26 @@
     return venue.name.toLowerCase().includes(venue.hood.toLowerCase()) ? '' : venue.hood;
   }
 
-  // Plain "<place>, <city>, WA"-style text — shared by the Get Directions
-  // Maps link and the Add to Calendar LOCATION field so the two stay
-  // consistent instead of building this string twice. Uses the venue's OWN
-  // city field, not the currently-selected city filter — a Bellevue venue
-  // always searches as Bellevue regardless of what's selected in Refine.
+  // Per-city state/region, for the Get Directions/Add to Calendar location
+  // string. Derived data (SUPPORTED_CITIES) drives which cities exist;
+  // this lookup only needs a state whenever a new one is added — falls
+  // back to 'WA' since that's every city added so far, but a genuinely
+  // unmapped future city should be added here explicitly, not silently
+  // guessed.
+  const CITY_STATE = { Seattle: 'WA', Bellevue: 'WA', Phoenix: 'AZ' };
+
+  // Plain "<place>, <city>, <state>"-style text — shared by the Get
+  // Directions Maps link and the Add to Calendar LOCATION field so the two
+  // stay consistent instead of building this string twice. Uses the
+  // venue's OWN city field, not the currently-selected city filter — a
+  // Bellevue venue always searches as Bellevue regardless of what's
+  // selected in Refine.
   function venueLocationText(venue) {
     if (venue.mapQuery) return venue.mapQuery;
     const searchName = venue.mapName || venue.name;
     const city = venue.city || 'Seattle';
-    return searchName + ', ' + city + ', WA';
+    const state = CITY_STATE[city] || 'WA';
+    return searchName + ', ' + city + ', ' + state;
   }
 
   function venueMapUrl(venue) {
@@ -1779,28 +1805,42 @@
   const DEFAULT_EVENT_HOUR = 19; // 7:00 PM
   const DEFAULT_EVENT_DURATION_HOURS = 3;
 
-  // Finds the UTC offset America/Los_Angeles uses on a given Y/M/D (-7 in
-  // PDT, -8 in PST), via Intl rather than a hardcoded DST table, so a
-  // Pacific wall-clock time converts to the correct UTC instant regardless
-  // of the visitor's own timezone or which side of a DST changeover the
-  // event falls on.
-  function pacificOffsetMinutes(year, month, day) {
+  // Per-city timezone, for converting a calendar event's wall-clock time
+  // to the correct UTC instant. Matters for real correctness, not just
+  // formatting — Arizona doesn't observe Daylight Saving Time, so a
+  // Phoenix event needs its own timezone entry rather than sharing
+  // Seattle/Bellevue's Pacific one, or its calendar time would be off by
+  // 1-2 hours depending on the time of year.
+  const CITY_TIMEZONE = {
+    Seattle: 'America/Los_Angeles',
+    Bellevue: 'America/Los_Angeles',
+    Phoenix: 'America/Phoenix'
+  };
+  const DEFAULT_TIMEZONE = 'America/Los_Angeles';
+
+  // Finds the UTC offset a given IANA timezone uses on a given Y/M/D (e.g.
+  // -7 in PDT, -8 in PST — but a fixed -7 year-round for America/Phoenix,
+  // which never observes DST), via Intl rather than a hardcoded DST table,
+  // so a local wall-clock time converts to the correct UTC instant
+  // regardless of the visitor's own timezone or which side of a DST
+  // changeover the event falls on.
+  function timezoneOffsetMinutes(timeZone, year, month, day) {
     try {
       const probe = new Date(Date.UTC(year, month - 1, day, 20));
       const parts = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/Los_Angeles',
+        timeZone: timeZone,
         timeZoneName: 'shortOffset'
       }).formatToParts(probe);
       const tzPart = parts.find(function (p) { return p.type === 'timeZoneName'; });
       const match = tzPart && tzPart.value.match(/GMT([+-]\d+)/);
       return match ? parseInt(match[1], 10) * 60 : -480;
     } catch (e) {
-      return -480; // PST fallback if Intl support is missing
+      return -480; // Pacific Standard Time fallback if Intl support is missing
     }
   }
 
-  function pacificToUtcDate(year, month, day, hour, minute) {
-    const offsetMin = pacificOffsetMinutes(year, month, day);
+  function localToUtcDate(timeZone, year, month, day, hour, minute) {
+    const offsetMin = timezoneOffsetMinutes(timeZone, year, month, day);
     return new Date(Date.UTC(year, month - 1, day, hour, minute) - offsetMin * 60000);
   }
 
@@ -1839,7 +1879,8 @@
         title: title, location: location, allDay: false,
         year: parseInt(m[1], 10), month: parseInt(m[2], 10), day: parseInt(m[3], 10),
         hour: parseInt(m[4], 10), minute: parseInt(m[5], 10),
-        durationHours: venue.calendarDurationHours || DEFAULT_EVENT_DURATION_HOURS
+        durationHours: venue.calendarDurationHours || DEFAULT_EVENT_DURATION_HOURS,
+        timeZone: DEFAULT_TIMEZONE // Upcoming-mode events are all real Seattle games/festivals
       };
     }
 
@@ -1855,14 +1896,16 @@
     // Degenerate / Low-Key / Cocktail — this branch is defensive/unused
     // today (the customizer modal handles these modes directly with the
     // user's own chosen date/time), but kept correct in case that
-    // invariant ever changes. Defaults to the next Friday at 7:00 PM.
+    // invariant ever changes. Defaults to the next Friday at 7:00 PM in
+    // the venue's own city timezone.
     const nearestFriday = nextFridayDateStr(new Date());
     const parts = nearestFriday.split('-').map(Number);
     return {
       title: title, location: location, allDay: false,
       year: parts[0], month: parts[1], day: parts[2],
       hour: DEFAULT_EVENT_HOUR, minute: 0,
-      durationHours: DEFAULT_EVENT_DURATION_HOURS
+      durationHours: DEFAULT_EVENT_DURATION_HOURS,
+      timeZone: CITY_TIMEZONE[venue.city] || DEFAULT_TIMEZONE
     };
   }
 
@@ -1875,7 +1918,7 @@
       dtstartLine = 'DTSTART;VALUE=DATE:' + icsDateOnly(info.startDateStr);
       dtendLine = 'DTEND;VALUE=DATE:' + icsDateOnly(info.endDateStrExclusive);
     } else {
-      const startUtc = pacificToUtcDate(info.year, info.month, info.day, info.hour, info.minute);
+      const startUtc = localToUtcDate(info.timeZone || DEFAULT_TIMEZONE, info.year, info.month, info.day, info.hour, info.minute);
       const endUtc = new Date(startUtc.getTime() + info.durationHours * 3600000);
       dtstartLine = 'DTSTART:' + icsUtcStamp(startUtc);
       dtendLine = 'DTEND:' + icsUtcStamp(endUtc);
@@ -3015,7 +3058,8 @@
       allDay: false,
       year: dateParts[0], month: dateParts[1], day: dateParts[2],
       hour: timeParts[0], minute: timeParts[1],
-      durationHours: parseFloat(calDurationInput.value) || DEFAULT_EVENT_DURATION_HOURS
+      durationHours: parseFloat(calDurationInput.value) || DEFAULT_EVENT_DURATION_HOURS,
+      timeZone: CITY_TIMEZONE[pendingCalendarVenue.city] || DEFAULT_TIMEZONE
     };
     const wasSharedView = pendingCalendarIsSharedView;
     closeCalendarCustomizer();
